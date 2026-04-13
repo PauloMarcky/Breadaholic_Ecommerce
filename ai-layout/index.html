@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Breadaholic Website</title>
+  <link rel="stylesheet" href="index.css">
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════ NAVBAR ══════════════ -->
+  <nav class="navbar">
+    <div>
+      <a class="logo-container" href="index.html">
+        <img width="140px" src='images/business-logo.png' />
+      </a>
+    </div>
+
+    <div class="nav-links">
+      <a href="#" class="active">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="#">Talk To Us</a>
+      <a href="#">Locations</a>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="search">
+      <button>
+        P
+      </button>
+    </div>
+
+    <div class="nav-icons">
+      <!-- Grid / Menu icon -->
+      <button title="Menu Grid">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      </button>
+      <!-- User icon -->
+      <button title="Account">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hero">
+    <div class="hero-slides" id="heroSlides">
+      <!-- Slide 1 - uses a bakery placeholder gradient -->
+      <div class="hero-slide">
+        <div
+          style="width:100%;height:100%;background:linear-gradient(135deg,#3d1c00 0%,#7a4000 40%,#2a1200 100%);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:80px;">🥐</span>
+        </div>
+      </div>
+      <!-- Slide 2 -->
+      <div class="hero-slide">
+        <div
+          style="width:100%;height:100%;background:linear-gradient(135deg,#1a0d00 0%,#5a2d00 50%,#3d1c00 100%);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:80px;">☕</span>
+        </div>
+      </div>
+      <!-- Slide 3 -->
+      <div class="hero-slide">
+        <div
+          style="width:100%;height:100%;background:linear-gradient(135deg,#2a1200 0%,#6b3800 50%,#1a0d00 100%);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:80px;">🍞</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay text -->
+    <div class="hero-content">
+      <h1>ALL FAVORITES,<br>ONE PLACE</h1>
+      <button class="btn-hero">View Products</button>
+    </div>
+
+    <!-- Big "BREADAHOLIC" text overlay -->
+    <div
+      style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Playfair Display',serif;font-size:64px;font-weight:900;color:rgba(255,255,255,0.12);letter-spacing:8px;white-space:nowrap;pointer-events:none;text-transform:uppercase;user-select:none;">
+    </div>
+
+    <button class="hero-arrow left" onclick="slideHero(-1)"><img width="13px" src="images/left-arrow.png"
+        alt=""></button>
+    <button class="hero-arrow right" onclick="slideHero(1)"><img width="13px" src="images/right-arrow.png"
+        alt=""></button>
+  </section>
+
+  <!-- ══════════════ FEATURED PRODUCTS ══════════════ -->
+  <div class="section-wrap">
+    <div class="featured-card">
+      <h2 class="section-title">Featured Products</h2>
+      <div class="products-grid">
+
+        <!-- Product 1 -->
+        <div class="product-item">
+          <div class="product-placeholder">product</div>
+          <div class="product-footer">
+            <button class="btn-add">Add to Menu</button>
+            <input class="qty-input" type="number" value="1" min="1">
+          </div>
+        </div>
+
+        <!-- Product 2 -->
+        <div class="product-item">
+          <div class="product-placeholder">product</div>
+          <div class="product-footer">
+            <button class="btn-add">Add to Menu</button>
+            <input class="qty-input" type="number" value="1" min="1">
+          </div>
+        </div>
+
+        <!-- Product 3 -->
+        <div class="product-item">
+          <div class="product-placeholder">product</div>
+          <div class="product-footer">
+            <button class="btn-add">Add to Menu</button>
+            <input class="qty-input" type="number" value="1" min="1">
+          </div>
+        </div>
+
+        <!-- Product 4 -->
+        <div class="product-item">
+          <div class="product-placeholder">product</div>
+          <div class="product-footer">
+            <button class="btn-add">Add to Menu</button>
+            <input class="qty-input" type="number" value="1" min="1">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ PHOTO ALBUMS ══════════════ -->
+  <div class="albums-section">
+    <div class="albums-label">
+      <h2>Photo<br>Albums</h2>
+    </div>
+
+    <button class="albums-arrow" onclick="slideAlbum(-1)">&#8249;</button>
+
+    <div class="albums-container" style="overflow:hidden;">
+      <div class="albums-track" id="albumTrack">
+        <div class="album-thumb">
+          <div
+            style="width:100%;height:100%;background:linear-gradient(135deg,#c9a96e,#7a4a00);display:flex;align-items:center;justify-content:center;font-size:40px;">
+            🏪</div>
+        </div>
+        <div class="album-thumb">
+          <div
+            style="width:100%;height:100%;background:linear-gradient(135deg,#8b5e3c,#4a2800);display:flex;align-items:center;justify-content:center;font-size:40px;">
+            👥</div>
+        </div>
+        <div class="album-thumb">
+          <div
+            style="width:100%;height:100%;background:linear-gradient(135deg,#d4a96a,#8b4a00);display:flex;align-items:center;justify-content:center;font-size:40px;">
+            🌃</div>
+        </div>
+        <div class="album-thumb">
+          <div
+            style="width:100%;height:100%;background:linear-gradient(135deg,#a06030,#5a2d00);display:flex;align-items:center;justify-content:center;font-size:40px;">
+            ☕</div>
+        </div>
+        <div class="album-thumb">
+          <div
+            style="width:100%;height:100%;background:linear-gradient(135deg,#c8a050,#7a4a00);display:flex;align-items:center;justify-content:center;font-size:40px;">
+            🥞</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="albums-arrow" onclick="slideAlbum(1)">&#8250;</button>
+  </div>
+
+  <!-- ══════════════ CUSTOMER FEEDBACK ══════════════ -->
+  <div class="feedback-section">
+    <h2 class="feedback-title">Customer Feedback</h2>
+
+    <div class="feedback-body">
+      <div class="scroll-left">
+        <button class="scroll-btn" onclick="scrollReviews(-1)">
+          < </button>
+      </div>
+
+      <!-- Review cards -->
+      <div class="reviews-grid" id="reviewsGrid">
+        <div class="review-card">
+          <p>The pan de sal here is amazing – fresh every morning and so fluffy inside. Will definitely come back!</p>
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+        </div>
+        <div class="review-card">
+          <p>Best coffee and pastries in town. The ensaymada melts in your mouth. Highly recommended!</p>
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+        </div>
+        <div class="review-card">
+          <p>Love the variety of breads here. The staff is very friendly and the prices are very reasonable.</p>
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>☆</span>
+          </div>
+        </div>
+        <div class="review-card">
+          <p>Great place to grab merienda! The donuts are soft and the toppings are generous. 10/10!</p>
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+        </div>
+        <div class="review-card">
+          <p>Great place to grab merienda! The donuts are soft and the toppings are generous. 10/10!</p>
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+        </div>
+        <div class="review-card">
+          <p>Great place to grab merienda! The donuts are soft and the toppings are generous. 10/10!</p>
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scroll-right">
+        <button class="scroll-btn" onclick="scrollReviews(1)">></button>
+      </div>
+      <!-- Feedback form -->
+      <div class="feedback-form">
+        <textarea placeholder="Message here . . . ."></textarea>
+        <div class="form-stars" id="formStars">
+          <span data-v="1" onclick="setStars(1)">★</span>
+          <span data-v="2" onclick="setStars(2)">★</span>
+          <span data-v="3" onclick="setStars(3)">★</span>
+          <span data-v="4" onclick="setStars(4)">★</span>
+          <span data-v="5" onclick="setStars(5)">★</span>
+        </div>
+        <button class="btn-submit">Submit Feedback</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ PAGE NAV ══════════════ -->
+
+  <!-- ══════════════ SCRIPTS ══════════════ -->
+  <script>
+    /* Hero Carousel */
+    let heroIndex = 0;
+    const heroSlides = document.getElementById('heroSlides');
+    const totalSlides = heroSlides.children.length;
+
+    function slideHero(dir) {
+      heroIndex = (heroIndex + dir + totalSlides) % totalSlides;
+      heroSlides.style.transform = `translateX(-${heroIndex * 100}%)`;
+    }
+
+    // Auto-advance hero every 5s
+    setInterval(() => slideHero(1), 5000);
+
+    /* Album Carousel */
+    let albumOffset = 0;
+    const albumTrack = document.getElementById('albumTrack');
+
+    function slideAlbum(dir) {
+      const itemWidth = albumTrack.children[0].offsetWidth + 14; // gap
+      const maxOffset = (albumTrack.children.length - 3) * itemWidth;
+      albumOffset = Math.max(0, Math.min(albumOffset + dir * itemWidth, maxOffset));
+      albumTrack.style.transform = `translateX(-${albumOffset}px)`;
+    }
+
+    /* Star Rating in Form */
+    let selectedStars = 5;
+
+    function setStars(val) {
+      selectedStars = val;
+      const spans = document.querySelectorAll('#formStars span');
+      spans.forEach((s, i) => {
+        s.style.color = i < val ? 'var(--star)' : '#ddd';
+      });
+    }
+
+    // Hover effect on form stars
+    document.querySelectorAll('#formStars span').forEach((s, i, arr) => {
+      s.addEventListener('mouseover', () => {
+        arr.forEach((el, j) => el.style.color = j <= i ? 'var(--star)' : '#ddd');
+      });
+      s.addEventListener('mouseleave', () => setStars(selectedStars));
+    });
+
+    // Submit feedback
+    document.querySelector('.btn-submit').addEventListener('click', () => {
+      const textarea = document.querySelector('.feedback-form textarea');
+      if (!textarea.value.trim()) { textarea.focus(); return; }
+      alert('Thank you for your feedback! ⭐'.repeat(selectedStars).slice(0, 50));
+      textarea.value = '';
+      setStars(5);
+    });
+
+    function scrollReviews(dir) {
+      const grid = document.getElementById('reviewsGrid');
+      // Scroll by the width of one card + the gap
+      const scrollAmount = 300;
+      grid.scrollBy({
+        left: dir * scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  </script>
+</body>
+
+</html>

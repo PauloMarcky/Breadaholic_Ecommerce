@@ -1,0 +1,27 @@
+:root {
+  --middle-brown: #8B4A00;
+  --light-brown: #e8e0c8;
+  --brown-dark: #6B3800;
+  --brown-light: #A85C00;
+  --brown-light-lowopac: #a85c0098;
+  --gold: #D4960A;
+  --gold-light: #F0B429;
+  --cream: #e8e0c8;
+  --card-bg: #FEFEFE;
+  --text-dark: #2C1A00;
+  --darker-brown: #5A3D1A;
+  --border: #D4B896;
+  --star: #F0B429;
+}
+
+body,
+html {
+  margin: 0px;
+  padding: 0px;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--cream);
+}
