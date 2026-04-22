@@ -1,0 +1,15 @@
+.footer-container {
+  position: relative;
+  bottom: 0px;
+  z-index: 10;
+  background-color: var(--brown-light);
+  height: 60px;
+  width: 100%;
+  padding: 10px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: .7em;
+  color: var(--cream);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

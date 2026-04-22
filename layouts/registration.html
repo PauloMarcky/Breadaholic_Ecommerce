@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registration</title>
+  <link rel="stylesheet" href="registration.css" />
+</head>
+
+<body>
+
+  <div class="main-container">
+    <!--LEFT PANEL-->
+    <div class="left-side-container">
+      <div class="logo-container">
+        <img src="../images/business-logo.png" alt="">
+      </div>
+      <div class="title-container">
+        <h1 class="title">Baked w/ Love</h1>
+        <p class="sub-title">LOVE AT FIRST BITE</p>
+      </div>
+      <p class="buttom-sub-title">FEEL THE WARMTH IN EVERY SLICE</p>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-side-container">
+
+      <!-- LOGIN FORM -->
+      <div class="form-container" id="login-section">
+
+        <p class="welcome-text">WELCOME DEAR COSTUMER</p>
+        <p class="login-text">LOG IN TO ORDER</p>
+
+        <form id="login-form">
+          <input class="field" type="tel" placeholder="Mobile Number" required />
+          <input class="field" type="password" placeholder="Password" required />
+          <button class="btn-primary" type="submit">Log In</button>
+        </form>
+
+        <p class="switch-text">
+          <a href="#" class="switch-link" onclick="showSignup()">Sign Up</a>
+        </p>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div class="form-container hidden" id="signup-section">
+
+        <p class="welcome-text">WELCOME DEAR COSTUMER</p>
+        <p class="signup-text">SIGN IN TO ORDER</p>
+
+        <p class="field-label">Personal Information</p>
+        <form id="signup-form">
+          <div class="row-two">
+            <input class="field" type="text" placeholder="First name" required />
+            <input class="field" type="text" placeholder="Last name" required />
+          </div>
+          <input class="field" type="tel" placeholder="Mobile Number" required />
+
+          <p class="field-label">Address</p>
+          <div class="address-input">
+            <select class="field select-field">
+              <option value="" disabled selected hidden>Select Barangay</option>
+              <option>Dubinan West</option>
+              <option>Dubinan East</option>
+              <option>City Heights</option>
+              <option>Rosario</option>
+            </select>
+            <input class="field" type="text" placeholder="Street name" />
+          </div>
+
+          <input class="field" type="password" placeholder="Password" required />
+          <button class="btn-primary" type="submit">Sign Up</button>
+        </form>
+
+        <p class="switch-text">
+          <a href="#" class="switch-link" onclick="showLogin()">Log In</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+  </div>
+
+  <script>
+    function showSignup() {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('signup-section').classList.remove('hidden');
+    }
+    function showLogin() {
+      document.getElementById('signup-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    }
+
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      alert('Logged in successfully!');
+    });
+    document.getElementById('signup-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      alert('Account created! Please log in.');
+      showLogin();
+    });
+  </script>
+</body>
+
+</html>

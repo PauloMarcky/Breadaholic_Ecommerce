@@ -1,0 +1,328 @@
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Reset ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Variables ───────────────────────────────────────── */
+:root {
+  --brown-dark: #6B3210;
+  --brown-mid: #8B4A1A;
+  --gold-deep: #C4861A;
+  --gold-panel: #D4A43A;
+  --gold-light: #e8c564;
+  --gold-form: #D9AE45;
+  --cream: #e8e0c8;
+  --btn: #8B4A00;
+  --orange-hover: #A84E17;
+  --text-dark: #3E1A00;
+  --text-orange: #C05010;
+  --white: #FFFFFF;
+}
+
+/* ── Body / Page BG ──────────────────────────────────── */
+
+.pageBg {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.mainContainer {
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 550px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: none;
+  outline: 2px solid var(--brown-dark);
+  outline-offset: 5px;
+}
+
+/* ── Left Panel ─────────────────────────────── */
+.leftSideContainer {
+  flex: 1;
+  background-color: var(--gold-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  row-gap: 5px;
+}
+
+.logoContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 70px;
+}
+
+.logoImg {
+  width: 400px;
+}
+
+.titleContainer {
+  text-align: center;
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--brown-dark);
+  text-shadow: 0 1px 0 var(--gold-light);
+  margin-bottom: 6px;
+  margin-top: 80px;
+}
+
+.subTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  color: var(--gold-light);
+  font-weight: 700;
+}
+
+.buttomSubTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: var(--brown-dark);
+  font-weight: 700;
+  text-align: center;
+  position: absolute;
+  bottom: 15px;
+}
+
+/* ── Right Form Panel ────────────────────────────────── */
+.rightSideContainer {
+  width: 400px;
+  flex-shrink: 0;
+  background-color: var(--gold-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.75rem;
+  position: relative;
+}
+
+.rightSideContainer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(-45deg,
+      rgba(180, 100, 10, 0.06) 0px,
+      rgba(170, 94, 7, 0.059) 4px,
+      transparent 1px,
+      transparent 10px);
+  pointer-events: none;
+}
+
+/* ── Form Section ────────────────────────────────────── */
+.formContainer {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.25s ease;
+}
+
+.welcomeText {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  color: var(--brown-dark);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.loginText {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.6rem;
+  color: var(--brown-dark);
+  text-align: center;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+  opacity: 0.8;
+}
+
+.signupText {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.6rem;
+  color: var(--brown-dark);
+  text-align: center;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+  opacity: 0.8;
+}
+
+/* ── Fields ──────────────────────────────────────────── */
+.field {
+  display: block;
+  width: 100%;
+  height: 33px;
+  /* Add a fixed height */
+  padding: 0 10px;
+  /* Adjust padding so text stays centered */
+  margin-bottom: 10px;
+  background: var(--white);
+  border: 1.5px solid rgba(100, 50, 5, 0.25);
+  border-radius: 3px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.8rem;
+  color: #9A7020;
+  outline: none;
+}
+
+.field:focus {
+  border-color: var(--orange-btn);
+}
+
+.field::placeholder {
+  color: #9A7020;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.selectField {
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+  color: #9A7020;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.6rem;
+}
+
+.addressInput {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.5rem;
+  color: var(--brown-dark);
+  font-weight: 700;
+  margin-bottom: 4px;
+  margin-top: -2px;
+  letter-spacing: 0.3px;
+}
+
+/* 1. Shrink the main wrapper */
+:global(.reactSelect__control) {
+  display: block;
+  width: 100%;
+  height: 30px !important;
+  min-height: 33px !important;
+  background: var(--white);
+  border: 1.5px solid rgba(100, 50, 5, 0.25);
+  border-radius: 2px;
+  font-family: 'Lato', sans-serif;
+  color: #9A7020;
+  outline: none;
+}
+
+:global(.reactSelect__menu) {
+  color: #9A7020;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+}
+
+:global(.reactSelect__single-value) {
+  color: #9A7020 !important;
+}
+
+:global(.reactSelect__value-container) {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.8rem;
+}
+
+:global(.reactSelect__indicators-container) {
+  height: 29px !important;
+}
+
+:global(.reactSelect__indicator) {
+  padding: 2px !important;
+}
+
+:global(.reactSelect__placeholder) {
+  color: #9A7020 !important;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+
+/* ── Button ──────────────────────────────────────────── */
+.btnPrimary {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  margin-top: 4px;
+  background: var(--btn);
+  color: var(--white);
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 1em;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.btnPrimary:hover {
+  background: var(--orange-hover);
+}
+
+.btnPrimary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(100, 30, 0, 0.3);
+}
+
+/* ── Switch link ──────────────────────────────────────── */
+.switchText {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.75rem;
+}
+
+.switchLink {
+  color: var(--cream);
+  text-decoration: none;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.switchLink:hover {
+  color: var(--brown-mid);
+  text-decoration: underline;
+}
