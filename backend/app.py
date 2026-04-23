@@ -71,6 +71,11 @@ def add_user():
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        cursor.execute(
+            "SELECT * FROM Users WHERE mobile_number = %s", (mobile,))
+        if cursor.fetchone():
+            return jsonify({"error": "This mobile number is already registered!"}), 409
+
         sql_add = '''INSERT INTO Users
                     (mobile_number, first_name, last_name, barangay,
                      street_name, password, profile_picture, status)
