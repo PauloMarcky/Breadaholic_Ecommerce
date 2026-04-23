@@ -2,8 +2,11 @@ import "./Header.css";
 import { useState, useEffect } from "react";
 import axios from 'axios';
 import { Checkout } from "./Checkout";
+import { useNavigate } from 'react-router-dom';
 
 export function Header() {
+
+  const navigate = useNavigate();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -28,28 +31,33 @@ export function Header() {
     setIsCartOpen(!isCartOpen);
   }
 
-  useEffect(() => {
-    axios.get("http://127.0.0.1:5000/getUser")
-      .then(response => {
-        setUserData(response.data);
+  const fetchSpecificUser = (id) => {
+    axios.get(`http://127.0.0.1:5000/getUser/${id}`)
+      .then(res => {
+        setUserData(res.data);
       })
-      .catch(error => {
-        console.log("Error Fetching: ", error)
+      .catch(err => {
+        console.log("Error fetching user for header:", err);
       });
-  }, []);
+  };
+
   useEffect(() => {
-    axios.get("http://127.0.0.1:5000/getUser")
-      .then(response => {
-        setUserData(response.data);
-      })
-      .catch(error => {
-        console.log("Error Fetching: ", error)
-      });
+    const savedId = localStorage.getItem("currentUserId");
+
+    if (savedId) {
+      fetchSpecificUser(savedId);
+    }
   }, []);
 
   const openSidebar = () => {
     setIsProfileOpen(!isProfileOpen)
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem("currentUserId");
+    setUserData(null);
+    navigate("/");
+  };
   return (
     <>
       <header className="nav-wrapper">
@@ -157,7 +165,7 @@ export function Header() {
                   <button className="hide-profile-btn" onClick={openSidebar}><img src="./public/hide-button.png" alt="" /></button>
                 </div>
                 <div className="profile-image-container">
-                  <img className="profile-img" src={userData ? `${userData.profile_picture}` : "Loading..."} alt="" />
+                  <img className="profile-img" src={userData?.profile_picture || "/default-pfp.png"} alt="" />
                   <button><img className="add-icon" src="./public/add-icon.png" alt="" /></button>
                   <p>{userData ? `@${userData.first_name} ${userData.last_name}` : "Loading..."}</p>
                 </div>
@@ -182,7 +190,7 @@ export function Header() {
                     <p>{userData?.date_joined ? new Date(userData.date_joined).toLocaleDateString() : "Loading..."}</p>
                   </li>
                 </ul>
-                <button className="logout-btn">LOG OUT<img src="./public/logout-icon.png" alt="" /></button>
+                <button className="logout-btn" onClick={handleLogout}>LOG OUT<img src="./public/logout-icon.png" alt="" /></button>
               </div>
             </>
           </div>

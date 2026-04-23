@@ -16,14 +16,14 @@ db_pool = pooling.MySQLConnectionPool(
     pool_name="mypool", pool_size=5, **db_config)
 
 
-@app.route('/getUser', methods=['GET'])
-def get_user():
+@app.route('/getUser/<int:user_id>', methods=['GET'])
+def get_user(user_id):
+    conn = None
     try:
-        # Get a connection from the pool
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT * FROM Users WHERE user_id = 3;")
+        cursor.execute("SELECT * FROM Users WHERE user_id = %s", (user_id,))
         user = cursor.fetchone()
 
         cursor.close()
@@ -71,8 +71,9 @@ def add_user():
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        sql_add = '''INSERT INTO Users 
-                    (mobile_number, first_name, last_name, barangay, street_name, password, profile_picture, status)
+        sql_add = '''INSERT INTO Users
+                    (mobile_number, first_name, last_name, barangay,
+                     street_name, password, profile_picture, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'''
 
         values = (mobile, fname, lname, barangay,
@@ -92,6 +93,47 @@ def add_user():
     except Exception as err:
         if conn:
             conn.rollback()  # Undo changes if an error occurs
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+
+@app.route('/logIn', methods=['POST'])
+def logInAuthentication():
+    conn = None
+    try:
+        data = request.json
+        mobile = data.get('mobile_number')
+        password = data.get('password')
+
+        print(f"--- LOGIN ATTEMPT ---")
+        print(f"Received Mobile: '{mobile}'")
+        print(f"Received Password: '{password}'")
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = ("SELECT * FROM Users WHERE mobile_number = %s")
+        cursor.execute(query, (str(mobile).strip(),))
+        user = cursor.fetchone()
+
+        print(f"Database Result: {user}")
+
+        cursor.close()
+
+        if user:
+            if user['password'] == password:
+                return jsonify({
+                    "message": "Log In Successful",
+                    "user_id": user['user_id']
+                }), 200
+            else:
+                return jsonify({"error": "Incorrect password"}), 401
+        else:
+            return jsonify({"error": "User not found"}), 404
+
+    except Exception as err:
         return jsonify({"error": str(err)}), 500
     finally:
         if conn and conn.is_connected():

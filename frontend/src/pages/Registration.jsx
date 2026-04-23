@@ -6,21 +6,24 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 const barangayOptions = [
-  { value: "calao_east", label: "Calao East" },
-  { value: "calaocan", label: "Calaocan" },
-  { value: "calao_west", label: "Calao West" },
-  { value: "dubinan_east", label: "Dubinan East" },
-  { value: "dubinan_west", label: "Dubinan West" },
-  { value: "patul", label: "Patul" },
-  { value: "plaridel", label: "Plaridel" },
-  { value: "rosario", label: "Rosario" },
-  { value: "sinsayon", label: "Sinsayon" },
-  { value: "victory_norte", label: "Victory Norte" },
-  { value: "victory_sur", label: "Victory Sur" },
-  { value: "villasis", label: "Villasis" },
+  { value: "Calao East", label: "Calao East" },
+  { value: "Calaocan", label: "Calaocan" },
+  { value: "Calao West", label: "Calao West" },
+  { value: "Dubinan East", label: "Dubinan East" },
+  { value: "Dubinan West", label: "Dubinan West" },
+  { value: "Patul", label: "Patul" },
+  { value: "Plaridel", label: "Plaridel" },
+  { value: "Rosario", label: "Rosario" },
+  { value: "Sinsayon", label: "Sinsayon" },
+  { value: "Victory Norte", label: "Victory Norte" },
+  { value: "Victory Sur", label: "Victory Sur" },
+  { value: "Villasis", label: "Villasis" },
 ];
 
 export function Registration() {
+
+  const [errorSignUp, setErrorSignUp] = useState("");
+
 
   const navigate = useNavigate();
   const [isSignIn, setIsSignIn] = useState(false)
@@ -30,6 +33,7 @@ export function Registration() {
     setIsSignIn(!isSignIn);
   }
 
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -38,6 +42,13 @@ export function Registration() {
     street: "",
     password: "",
   });
+
+  const [logInData, setLogInData] = useState({ mobile: "", password: "" });
+
+  const handleLogInChange = (e) => {
+    setLoginError("");
+    setLogInData({ ...logInData, [e.target.name]: e.target.value });
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,6 +62,13 @@ export function Registration() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.barangay) {
+      setErrorSignUp("ERROR: Please enter Barangay to continue");
+      return;
+    }
+
+    setErrorSignUp("");
+
     try {
       const response = await fetch("http://127.0.0.1:5000/addUser", {
         method: "POST",
@@ -62,7 +80,6 @@ export function Registration() {
           barangay: formData.barangay,
           street_name: formData.street,
           password: formData.password,
-          profile_picture: "./src/assets/profile-demo.jpg", // Default for now
           status: "active"
         }),
       });
@@ -70,15 +87,51 @@ export function Registration() {
       const data = await response.json();
 
       if (response.ok) {
+        localStorage.setItem("currentUserId", data.user_id);
         alert("Registration Successful!");
-        navigate("/");
+        navigate("/home");
       } else {
-        alert("Error: " + data.error);
+        setErrorSignUp("INVALID: Mobile Number Already Exist!");
       }
     } catch (error) {
       console.error("Fetch error:", error);
+      setErrorSignUp("Server connection failed. Please try again later.");
     }
   };
+
+  const [loginError, setLoginError] = useState("");
+
+  const handleLogInSubmit = async (e) => {
+
+    e.preventDefault();
+    setLoginError("");
+
+    try {
+
+      const response = await fetch("http://127.0.0.1:5000/logIn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobile_number: logInData.mobile,
+          password: logInData.password
+        })
+      })
+
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem("currentUserId", data.user_id);
+        navigate("/home");
+      }
+      else {
+        setLoginError(data.error || "Invalid login credentials");
+      }
+
+    } catch (error) {
+      console.error("Login Error:", error);
+      setLoginError("Could not connect to the server");
+    }
+
+  }
 
   return (
     <div className={style.pageBg}>
@@ -103,9 +156,10 @@ export function Registration() {
               <p className={style.welcomeText}>WELCOME DEAR COSTUMER</p>
               <p className={style.loginText}>LOG IN TO ORDER</p>
 
-              <form id={style.loginForm}>
-                <input className={style.field} type="tel" placeholder="Mobile Number" required />
-                <input className={style.field} type="password" placeholder="Password" required />
+              <form id={style.loginForm} onSubmit={handleLogInSubmit} >
+                <input className={style.field} name="mobile" onChange={handleLogInChange} type="tel" placeholder="Mobile Number" required />
+                <input className={style.field} name="password" onChange={handleLogInChange} type="password" placeholder="Password" required />
+                {loginError && <p style={{ color: "red", textAlign: "center", fontSize: "12px", margin: "10px 0px", fontFamily: "Arial" }}>{loginError}</p>}
                 <button className={style.btnPrimary} type="submit">Log In</button>
               </form>
 
@@ -171,6 +225,7 @@ export function Registration() {
                   name="password"
                   onChange={handleChange}
                   required />
+                {errorSignUp && <p style={{ color: "red", fontSize: "12px", margin: "10px 0px", textAlign: "center", fontFamily: "Arial" }}>{errorSignUp}</p>}
                 <button className={style.btnPrimary} type="submit">Sign Up</button>
               </form>
 
