@@ -32,6 +32,7 @@ html::-webkit-scrollbar {
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 10px;
+  border: 2px solid var(--darker-brown);
 }
 
 .all-order-header {
@@ -40,6 +41,7 @@ html::-webkit-scrollbar {
   justify-content: flex-end;
   background-color: var(--gold);
   border-radius: 10px 10px 0px 0px;
+  border-bottom: 2px solid var(--darker-brown);
 }
 
 .all-order-header img {
@@ -56,6 +58,11 @@ html::-webkit-scrollbar {
   padding: 20px;
 }
 
+.orders:hover {
+  transform: translateY(-5px);
+  transition: .3s ease;
+}
+
 .order-id h3 {
   font-size: 2.5em;
   margin: 5px 150px 15px 0px;
@@ -69,7 +76,7 @@ html::-webkit-scrollbar {
   align-items: center;
   justify-content: flex-start;
   column-gap: 20px;
-  height: auto;
+  height: 420px;
   overflow-x: scroll;
   margin: 20px;
 }
@@ -100,16 +107,16 @@ html::-webkit-scrollbar {
 }
 
 .fees h5 {
-  border: 2px solid var(--darker-brown);
-  width: 135px;
-  margin: 15px 0px;
-  padding: 10px 10px;
-  border-radius: 10px;
   font-size: .9em;
-  background-color: var(--brown-light-lowopac);
+  margin: 15px 0px;
 }
 
 .fees {
+  background-color: var(--brown-light-lowopac);
+  border: 2px solid var(--darker-brown);
+  width: 150px;
+  padding: 10px 10px;
+  border-radius: 10px;
   margin-bottom: 30px;
 }
 
@@ -117,11 +124,15 @@ html::-webkit-scrollbar {
   background-color: rgb(219, 61, 61);
   border-radius: 5px;
   padding: 5px 10px;
-  border: 1px solid var(--cream);
+  border: 1px solid var(--text-dark);
   font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
   font-size: .7em;
   font-weight: 500;
   color: var(--cream);
+}
+
+.cancel-btn button:hover {
+  background-color: rgb(177, 48, 48);
 }
 
 .cancel-btn {

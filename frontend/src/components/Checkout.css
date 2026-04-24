@@ -40,20 +40,23 @@ body {
   box-sizing: border-box;
   min-width: 450px;
   width: 550px;
-  z-index: 1000;
+  z-index: 999;
   display: flex;
   align-items: center;
   flex-direction: column;
+  outline: 2px solid var(--text-dark);
 }
 
 .orders-grid {
   width: 90%;
-  height: 250px;
-  background-color: var(--gold-light);
+  height: 230px;
+  background-color: none;
   padding: 10px 0px;
   overflow-y: scroll;
   border-radius: 10px;
-  margin-top: 20px;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  box-shadow: inset 0px 0px 10px var(--text-dark);
 }
 
 .orders-grid::-webkit-scrollbar {
@@ -64,7 +67,7 @@ body {
   background-color: var(--cream);
   display: flex;
   align-items: center;
-  margin: 10px;
+  margin: 15px 30px;
   position: relative;
   border-radius: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -89,7 +92,7 @@ body {
 }
 
 .note {
-  color: rgb(158, 0, 0);
+  color: rgba(175, 0, 0, 0.933);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: .7em;
   margin: 5px 0px;
@@ -106,7 +109,8 @@ body {
 }
 
 .order-location p {
-  margin: 8px;
+  margin: 5px;
+  font-size: .8em;
 }
 
 .location {
@@ -120,7 +124,7 @@ body {
 }
 
 .landmark textarea {
-  width: 420px;
+  width: 410px;
   height: 50px;
   resize: none;
 }
@@ -132,7 +136,7 @@ select {
 
 .location input {
   width: 240px;
-  height: 25px;
+  height: 30px;
 }
 
 .order-pricing {
@@ -158,9 +162,9 @@ select {
 
 .total-price {
   background-color: var(--cream);
-  padding: 5px 10px;
+  padding: 8px 10px;
   border-radius: 5px;
-  color: var(--darker-brown);
+  color: var(--text-dark);
 }
 
 .below-btn {
@@ -168,7 +172,7 @@ select {
   justify-content: space-around;
   align-items: center;
   gap: 50px;
-  margin: 20px;
+  margin: 20px 20px 40px 20px;
 }
 
 .below-btn button {
@@ -180,11 +184,19 @@ select {
 .confirm {
   color: var(--cream);
   background-color: rgb(10, 155, 10);
-  border: 1px solid var(--cream);
+  border: 1px solid var(--text-dark);
+}
+
+.confirm:hover {
+  background-color: rgb(8, 126, 8);
 }
 
 .cancel {
   color: var(--cream);
   background-color: rgb(170, 0, 0);
-  border: 1px solid var(--cream);
+  border: 1px solid var(--text-dark);
+}
+
+.cancel:hover {
+  background-color: rgb(144, 0, 0);
 }

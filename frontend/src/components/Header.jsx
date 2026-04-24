@@ -2,6 +2,7 @@ import "./Header.css";
 import { useState, useEffect } from "react";
 import axios from 'axios';
 import { Checkout } from "./Checkout";
+import { AllOrders } from "./AllOrders";
 import { useNavigate } from 'react-router-dom';
 
 export function Header() {
@@ -12,9 +13,13 @@ export function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [userData, setUserData] = useState(null)
   const [proceedCheckout, setProceedCheckout] = useState(false)
+  const [viewAllOrders, setViewAllOrders] = useState(false)
 
   const handleCheckout = () => {
     setProceedCheckout(!proceedCheckout)
+  }
+  const handleViewingOrders = () => {
+    setViewAllOrders(!viewAllOrders)
   }
 
   useEffect(() => {
@@ -81,8 +86,7 @@ export function Header() {
               <p>Basket</p>
             </div>
             <>
-              <div className={`sidebar-overlay ${isCartOpen && 'visible'}`}
-                onClick={() => setIsCartOpen(false)}>
+              <div className={`sidebar-overlay ${isCartOpen && 'visible'}`}>
               </div>
               <div className={`cart-container ${isCartOpen ? 'active' : ''}`} >
                 <div className="title-exit-btn">
@@ -148,7 +152,10 @@ export function Header() {
                   <div className={`checkout-overlay ${proceedCheckout && 'visible'}`}>
                   </div>
                   {proceedCheckout && <Checkout onCancel={handleCheckout} />}
-                  <button className="view">VIEW ALL ORDERS</button>
+                  <button className="view" onClick={handleViewingOrders}>VIEW ALL ORDERS</button>
+                  <div className={`view-orders-overlay ${viewAllOrders && 'visible'}`}>
+                  </div>
+                  {viewAllOrders && <AllOrders onCancel={handleViewingOrders} />}
                 </div>
               </div>
             </>
@@ -157,8 +164,7 @@ export function Header() {
               <p>Profile</p>
             </div>
             <>
-              <div className={`sidebar-overlay ${isProfileOpen && 'visible'}`}
-                onClick={() => setIsProfileOpen(false)}></div>
+              <div className={`sidebar-overlay ${isProfileOpen && 'visible'}`}></div>
               <div className={`profile-detail-container ${isProfileOpen ? 'active' : ''}`}>
                 <div className="header-profile">
                   <h2>Profile</h2>

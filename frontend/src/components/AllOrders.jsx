@@ -1,0 +1,72 @@
+import '../components/AllOrders.css'
+
+export function AllOrders({ onCancel }) {
+  return (
+    <>
+      <div class="all-order-container">
+        <div class="all-order-header">
+          <img src="../public/hide-button.png" alt="" onClick={onCancel} />
+        </div>
+        <div class="all-orders-wrapper">
+          <div class="orders">
+            <p class="all-order-status">PREPARING</p>
+            <div class="order-id">
+              <h3>001</h3>
+            </div>
+            <div class="all-order-info">
+              <h4>Escanor Noil Nis</h4>
+              <h4>Sa Universe 101</h4>
+              <h4>09090909090</h4>
+            </div>
+            <div class="all-order-price">
+              <div class="fees">
+                <h4>ORDER TOTAL: 450 petot</h4>
+                <h4>SHIPPING FEE: 50 petot</h4>
+                <h5>TOTAL: 500 petos</h5>
+              </div>
+            </div>
+            <div class="cancel-btn"><button>CANCEL ORDER</button></div>
+          </div>
+          <div class="orders">
+            <p class="all-order-status">PREPARING</p>
+            <div class="order-id">
+              <h3>002</h3>
+            </div>
+            <div class="all-order-info">
+              <h4>Escanor Noil Nis</h4>
+              <h4>Sa Universe 101</h4>
+              <h4>09090909090</h4>
+            </div>
+            <div class="all-order-price">
+              <div class="fees">
+                <h4>ORDER TOTAL: 450 petot</h4>
+                <h4>SHIPPING FEE: 50 petot</h4>
+                <h5>TOTAL: 500 petos</h5>
+              </div>
+            </div>
+            <div class="cancel-btn"><button>CANCEL ORDER</button></div>
+          </div>
+          <div class="orders">
+            <p class="all-order-status">PREPARING</p>
+            <div class="order-id">
+              <h3>003</h3>
+            </div>
+            <div class="all-order-info">
+              <h4>Escanor Noil Nis</h4>
+              <h4>Sa Universe 101</h4>
+              <h4>09090909090</h4>
+            </div>
+            <div class="all-order-price">
+              <div class="fees">
+                <h4>ORDER TOTAL: 450 petot</h4>
+                <h4>SHIPPING FEE: 50 petot</h4>
+                <h5>TOTAL: 500 petos</h5>
+              </div>
+            </div>
+            <div class="cancel-btn"><button>CANCEL ORDER</button></div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
