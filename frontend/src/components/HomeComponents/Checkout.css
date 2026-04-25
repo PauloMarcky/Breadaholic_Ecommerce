@@ -14,21 +14,7 @@
   --star: #F0B429;
 }
 
-body,
-html {
-  margin: 0px;
-  padding: 0px;
-}
 
-html::-webkit-scrollbar {
-  display: none;
-}
-
-body {
-  width: 100%;
-  min-height: 100vh;
-  background-color: var(--cream);
-}
 
 .checkout-container {
   background-color: var(--brown-light);

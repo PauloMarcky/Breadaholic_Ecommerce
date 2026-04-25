@@ -1,4 +1,4 @@
-import '../components/IntroHook.css'
+import './IntroHook.css'
 import React, { useState } from 'react';
 
 

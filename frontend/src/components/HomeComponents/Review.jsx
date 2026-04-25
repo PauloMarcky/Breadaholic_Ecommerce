@@ -1,4 +1,4 @@
-import '../components/Review.css'
+import './Review.css'
 import { useRef } from 'react'
 
 export function Review() {

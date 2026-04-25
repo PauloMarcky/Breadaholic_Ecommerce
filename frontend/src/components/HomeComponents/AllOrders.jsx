@@ -1,4 +1,4 @@
-import '../components/AllOrders.css'
+import './AllOrders.css'
 
 export function AllOrders({ onCancel }) {
   return (

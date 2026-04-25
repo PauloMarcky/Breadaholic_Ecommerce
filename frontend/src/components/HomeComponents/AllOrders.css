@@ -14,15 +14,6 @@
   --star: #F0B429;
 }
 
-body,
-html {
-  margin: 0px;
-  padding: 0px;
-}
-
-html::-webkit-scrollbar {
-  display: none;
-}
 
 
 .all-order-container {

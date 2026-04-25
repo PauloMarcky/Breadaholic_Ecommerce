@@ -1,4 +1,4 @@
-import '../components/FeatureProduct.css'
+import './FeatureProduct.css'
 import axios from 'axios';
 import { useEffect, useState } from 'react'
 

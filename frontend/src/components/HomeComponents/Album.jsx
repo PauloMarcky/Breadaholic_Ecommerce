@@ -1,4 +1,4 @@
-import '../components/Album.css'
+import './Album.css'
 import { useRef } from 'react';
 
 export function Album() {

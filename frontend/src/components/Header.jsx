@@ -1,8 +1,8 @@
 import "./Header.css";
 import { useState, useEffect } from "react";
 import axios from 'axios';
-import { Checkout } from "./Checkout";
-import { AllOrders } from "./AllOrders";
+import { Checkout } from "./HomeComponents/Checkout";
+import { AllOrders } from "./HomeComponents/AllOrders";
 import { useNavigate } from 'react-router-dom';
 
 export function Header() {

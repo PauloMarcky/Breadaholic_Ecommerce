@@ -1,4 +1,4 @@
-import '../components/Checkout.css'
+import './Checkout.css'
 
 export function Checkout({ onCancel }) {
   return (
