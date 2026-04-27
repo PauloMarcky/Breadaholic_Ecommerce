@@ -2,7 +2,7 @@
   position: relative;
   bottom: 0px;
   z-index: 10;
-  background-color: var(--brown-light);
+  background-color: var(--components);
   height: 60px;
   width: 100%;
   padding: 10px 20px;

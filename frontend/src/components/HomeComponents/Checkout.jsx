@@ -6,7 +6,7 @@ export function Checkout({ onCancel }) {
       <div className="checkout-container">
         <div className="orders-grid">
           <div className="order-display">
-            <img src="/images/cart-item.jpg" alt="" />
+            <img src="../src/assets/cart-item.jpg" alt="" />
             <div className="order-info">
               <h5>Marcky Balaba</h5>
               <h5>1T Pesos</h5>
@@ -14,7 +14,7 @@ export function Checkout({ onCancel }) {
             <p>Qty. 1</p>
           </div>
           <div className="order-display">
-            <img src="/images/cart-item.jpg" alt="" />
+            <img src="../src/assets/cart-item.jpg" alt="" />
             <div className="order-info">
               <h5>Marcky Balaba</h5>
               <h5>1T Pesos</h5>
@@ -22,7 +22,7 @@ export function Checkout({ onCancel }) {
             <p>Qty. 1</p>
           </div>
           <div className="order-display">
-            <img src="/images/cart-item.jpg" alt="" />
+            <img src="../src/assets/cart-item.jpg" alt="" />
             <div className="order-info">
               <h5>Marcky Balaba</h5>
               <h5>1T Pesos</h5>

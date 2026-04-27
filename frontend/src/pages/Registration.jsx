@@ -23,16 +23,9 @@ const barangayOptions = [
 export function Registration() {
 
   const [errorSignUp, setErrorSignUp] = useState("");
-
-
-  const navigate = useNavigate();
-  const [isSignIn, setIsSignIn] = useState(false)
-
-  const showSignUp = (e) => {
-    e.preventDefault();
-    setIsSignIn(!isSignIn);
-  }
-
+  const [loginError, setLoginError] = useState("");
+  const [isSignIn, setIsSignIn] = useState(false);
+  const [logInData, setLogInData] = useState({ mobile: "", password: "" });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -43,7 +36,12 @@ export function Registration() {
     password: "",
   });
 
-  const [logInData, setLogInData] = useState({ mobile: "", password: "" });
+  const navigate = useNavigate();
+
+  const showSignUp = (e) => {
+    e.preventDefault();
+    setIsSignIn(!isSignIn);
+  }
 
   const handleLogInChange = (e) => {
     setLoginError("");
@@ -99,8 +97,6 @@ export function Registration() {
     }
   };
 
-  const [loginError, setLoginError] = useState("");
-
   const handleLogInSubmit = async (e) => {
 
     e.preventDefault();
@@ -151,7 +147,7 @@ export function Registration() {
 
         <div className={style.rightSideContainer}>
           {!isSignIn ? (
-            <div className={style.formContainer} id="login-section">
+            <div className={style.formContainer} key="login-form">
 
               <p className={style.welcomeText}>WELCOME DEAR COSTUMER</p>
               <p className={style.loginText}>LOG IN TO ORDER</p>
@@ -170,7 +166,7 @@ export function Registration() {
 
           ) : (
 
-            <div className={style.formContainer} id="signup-section">
+            <div className={style.formContainer} key="signup-section">
 
               <p className={style.welcomeText}>WELCOME DEAR COSTUMER</p>
               <p className={style.signupText}>SIGN IN TO ORDER</p>

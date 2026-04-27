@@ -1,23 +1,5 @@
-:root {
-  --middle-brown: #8B4A00;
-  --light-brown: #e8e0c8;
-  --brown-dark: #6B3800;
-  --brown-light: #A85C00;
-  --brown-light-lowopac: #a85c0098;
-  --gold: #D4960A;
-  --gold-light: #F0B429;
-  --cream: #e8e0c8;
-  --card-bg: #FEFEFE;
-  --text-dark: #2C1A00;
-  --darker-brown: #5A3D1A;
-  --border: #D4B896;
-  --star: #F0B429;
-}
-
-
-
 .checkout-container {
-  background-color: var(--brown-light);
+  background-color: var(--components);
   position: fixed;
   top: 50%;
   left: 50%;
@@ -78,7 +60,7 @@
 }
 
 .note {
-  color: rgba(175, 0, 0, 0.933);
+  color: rgba(188, 0, 0, 0.933);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: .7em;
   margin: 5px 0px;
@@ -147,10 +129,10 @@ select {
 
 
 .total-price {
-  background-color: var(--cream);
+  background-color: var(--brown-light);
   padding: 8px 10px;
   border-radius: 5px;
-  color: var(--text-dark);
+  color: var(--text-light);
 }
 
 .below-btn {

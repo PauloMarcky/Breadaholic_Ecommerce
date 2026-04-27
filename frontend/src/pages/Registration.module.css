@@ -19,28 +19,12 @@
   padding: 0;
 }
 
-/* ── Variables ───────────────────────────────────────── */
-:root {
-  --brown-dark: #6B3210;
-  --brown-mid: #8B4A1A;
-  --gold-deep: #C4861A;
-  --gold-panel: #D4A43A;
-  --gold-light: #e8c564;
-  --gold-form: #D9AE45;
-  --cream: #e8e0c8;
-  --btn: #8B4A00;
-  --orange-hover: #A84E17;
-  --text-dark: #3E1A00;
-  --text-orange: #C05010;
-  --white: #FFFFFF;
-}
-
 /* ── Body / Page BG ──────────────────────────────────── */
 
 .pageBg {
   width: 100%;
   min-height: 100vh;
-  background: var(--cream);
+  background: var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,7 +47,7 @@
 /* ── Left Panel ─────────────────────────────── */
 .leftSideContainer {
   flex: 1;
-  background-color: var(--gold-deep);
+  background-color: var(--left-background);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -90,9 +74,9 @@
 
 .title {
   font-family: 'Playfair Display', serif;
-  font-size: 2rem;
+  font-size: 2.7rem;
   font-weight: 700;
-  color: var(--brown-dark);
+  color: var(--text-light);
   text-shadow: 0 1px 0 var(--gold-light);
   margin-bottom: 6px;
   margin-top: 80px;
@@ -100,17 +84,17 @@
 
 .subTitle {
   font-family: 'Cinzel', serif;
-  font-size: 0.7rem;
-  letter-spacing: 3px;
-  color: var(--gold-light);
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: var(--text-dark);
   font-weight: 700;
 }
 
 .buttomSubTitle {
   font-family: 'Cinzel', serif;
-  font-size: 0.6rem;
+  font-size: 0.9rem;
   letter-spacing: 1.5px;
-  color: var(--brown-dark);
+  color: var(--cream);
   font-weight: 700;
   text-align: center;
   position: absolute;
@@ -121,7 +105,7 @@
 .rightSideContainer {
   width: 400px;
   flex-shrink: 0;
-  background-color: var(--gold-panel);
+  background-color: var(--right-background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,9 +136,9 @@
 
 .welcomeText {
   font-family: 'Cinzel', serif;
-  font-size: 0.65rem;
+  font-size: 1rem;
   letter-spacing: 1.5px;
-  color: var(--brown-dark);
+  color: var(--text-light);
   font-weight: 700;
   text-align: center;
   margin-bottom: 10px;
@@ -162,8 +146,8 @@
 
 .loginText {
   font-family: 'Lato', sans-serif;
-  font-size: 0.6rem;
-  color: var(--brown-dark);
+  font-size: 0.8rem;
+  color: var(--text-dark);
   text-align: center;
   margin-bottom: 1rem;
   margin-top: 1rem;
@@ -172,8 +156,8 @@
 
 .signupText {
   font-family: 'Lato', sans-serif;
-  font-size: 0.6rem;
-  color: var(--brown-dark);
+  font-size: 0.8rem;
+  color: var(--text-dark);
   text-align: center;
   margin-bottom: 1rem;
   margin-top: 1rem;
@@ -227,7 +211,7 @@
 
 .fieldLabel {
   font-family: 'Lato', sans-serif;
-  font-size: 0.5rem;
+  font-size: 0.7rem;
   color: var(--brown-dark);
   font-weight: 700;
   margin-bottom: 4px;
@@ -299,7 +283,7 @@
 }
 
 .btnPrimary:hover {
-  background: var(--orange-hover);
+  background: var(--btn-hover);
 }
 
 .btnPrimary:active {

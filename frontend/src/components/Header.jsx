@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Checkout } from "./HomeComponents/Checkout";
 import { AllOrders } from "./HomeComponents/AllOrders";
 import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 export function Header() {
 
@@ -71,10 +72,33 @@ export function Header() {
             <img src="./public/business-logo.png" />
           </div>
           <div className="nav-link-container">
-            <a className="active">Home</a>
-            <a>Menu</a>
-            <a>Talk to us</a>
-            <a>Locations</a>
+            <NavLink
+              to="/home"
+              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            >
+              Home
+            </NavLink>
+
+            <NavLink
+              to="/menu"
+              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            >
+              Menu
+            </NavLink>
+
+            <NavLink
+              to="/contact"
+              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            >
+              Talk to us
+            </NavLink>
+
+            <NavLink
+              to="/locations"
+              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            >
+              Locations
+            </NavLink>
           </div>
           <div className="nav-right-side">
             <div className="searching-container">

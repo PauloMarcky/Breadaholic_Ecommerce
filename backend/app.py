@@ -16,6 +16,36 @@ db_pool = pooling.MySQLConnectionPool(
     pool_name="mypool", pool_size=5, **db_config)
 
 
+@app.route('/')
+def home():
+    return """
+    <div style="
+        display: flex; 
+        flex-direction: column;
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        margin: 0; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f7f6;
+        color: #333;
+    ">
+        <div style="
+            padding: 40px; 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        ">
+            <h1 style="color: #2ecc71; margin-bottom: 10px;">Backend Online</h1>
+            <p style="color: #666;">E-commerce API is running successfully, HECK YA.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <code style="background: #eee; padding: 5px 10px; border-radius: 4px;">Status: 200 OK</code>
+        </div>
+    </div>
+    """
+
+
 @app.route('/getUser/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     conn = None

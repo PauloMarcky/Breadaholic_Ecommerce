@@ -1,16 +1,18 @@
 :root {
-  --middle-brown: #8B4A00;
-  --light-brown: #e8e0c8;
+  --background: #F8E9D3;
+  --left-background: #B07A3B;
+  --right-background: #CE9A56;
+  --light-background: #B5814B;
+  --components: #5D4122;
+  --btn: #835126;
+  --btn-hover: #835126b5;
+  --text-dark: #3E1A00;
+  --text-light: #e8e0c8;
+  --text-sub-light: #D2A26A;
   --brown-dark: #6B3800;
   --brown-light: #A85C00;
-  --brown-light-lowopac: #a85c0098;
-  --gold: #D4960A;
-  --gold-light: #F0B429;
   --cream: #e8e0c8;
-  --card-bg: #FEFEFE;
-  --text-dark: #2C1A00;
-  --darker-brown: #5A3D1A;
-  --border: #D4B896;
+  --white: #ffffff;
   --star: #F0B429;
 }
 
@@ -27,5 +29,5 @@ html::-webkit-scrollbar {
 body {
   width: 100%;
   min-height: 100vh;
-  background-color: var(--cream);
+  background-color: var(--background);
 }

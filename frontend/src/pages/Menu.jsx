@@ -1,11 +1,13 @@
 import { Header } from '../components/Header'
-import { Footer } from '../components/Footer'
+import { MenuCategories } from '../components/MenuComponents/MenuCategories'
+import { Products } from '../components/MenuComponents/Products'
 
 export function Menu() {
   return (
     <>
       <Header />
-      <Footer />
+      <MenuCategories />
+      <Products />
     </>
   )
 }

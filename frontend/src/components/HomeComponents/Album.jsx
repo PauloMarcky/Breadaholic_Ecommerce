@@ -20,6 +20,8 @@ export function Album() {
       <div className="albums-section">
         <div className="albums-label">
           <h2>Photo<br />Albums</h2>
+          <p>come and join us</p>
+          <button>FIND US HERE</button>
         </div>
 
         <button className="albums-arrow" onClick={() => scroll('left')} ><img src="../public/left-arrow.png" alt="" /></button>
