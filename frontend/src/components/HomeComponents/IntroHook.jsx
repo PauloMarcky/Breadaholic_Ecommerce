@@ -1,5 +1,6 @@
 import './IntroHook.css'
 import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 
 
 export function IntroHook() {
@@ -32,7 +33,9 @@ export function IntroHook() {
         <section className="feature-images-container">
           <div className="intro">
             <h1>ALL FAVORITES, <br /> ONE PLACE</h1>
-            <button>VIEW MENU</button>
+            <NavLink to="/menu" className='btn-tomenu'>
+              VIEW MENU
+            </NavLink>
           </div>
 
           <div

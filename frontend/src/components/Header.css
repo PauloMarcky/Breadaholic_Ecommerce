@@ -155,17 +155,6 @@ nav {
   height: 18px;
 }
 
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  /* Black with 50% transparency */
-  z-index: 150;
-  backdrop-filter: blur(2px);
-}
 
 .profile-button img {
   width: 25px;
