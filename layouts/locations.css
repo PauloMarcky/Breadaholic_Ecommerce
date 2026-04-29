@@ -1,6 +1,5 @@
 :root {
   --background: #F8E9D3;
-  --background-low: #f8e9d3b6;
   --left-background: #B07A3B;
   --right-background: #CE9A56;
   --light-background: #B5814B;
@@ -206,163 +205,104 @@ nav {
 
 
 
+/* MAIN BODY */
 
-
-
-/* TO BE COPIED */
-
-.body-main {
+.main-body {
+  box-sizing: border-box;
   position: relative;
   top: 100px;
-  display: flex;
-}
-
-.contacts-left {
-  box-sizing: border-box;
-  width: 50%;
   height: calc(100vh - 100px);
-  padding-left: 200px;
-  padding-top: 20px;
-}
-
-.contacts-container {
+  width: 100%;
+  padding: 50px 200px;
   display: flex;
-  column-gap: 20px;
+  gap: 20px;
 }
 
-.header h2 {
-  font-size: 4.5em;
-  margin-bottom: 10px;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  color: var(--text-dark);
-}
-
-.header p {
-  font-size: 1em;
-  margin: 5px 0px 20px 10px;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  color: var(--text-dark);
-}
-
-.header-con {
-  display: flex;
-  align-items: center;
-  column-gap: 10px;
-}
-
-.header-con img {
-  width: 30px;
-  height: 30px;
-}
-
-.contact-info {
-  background-color: var(--cream);
-  border-radius: 10px;
+.locations-container {
   box-sizing: border-box;
-  padding: 10px 15px;
-  width: 59%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: .8em;
-  transition: all .3s ease;
-}
-
-.contact-info:hover {
-  transform: translateY(-5px);
-}
-
-.value {
-  padding-left: 10px;
-  margin-top: 10px;
-}
-
-hr {
-  margin-top: 40px;
+  height: 100%;
+  width: 250px;
   background-color: var(--components);
-  height: 1px;
-  border: none;
-  width: 400px;
-}
-
-.contact-img {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.contact-img img {
-  width: 40px;
-  cursor: pointer;
-}
-
-.follow-mess {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: .8em;
-  margin-bottom: 5px;
-}
-
-.contact-right {
-  box-sizing: border-box;
-  width: 50%;
-  height: calc(100vh - 100px);
-  padding-right: 100px;
-  padding-top: 80px;
-  padding-left: 80px;
-  padding-bottom: 10px;
-}
-
-.input-container {
-  width: 80%;
-  height: 80%;
-  background-color: var(--components);
-  padding: 20px;
-  padding-left: 30px;
-  box-sizing: border-box;
-  border-radius: 15px;
   display: flex;
   flex-direction: column;
-  color: var(--text-light);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  box-shadow: 5px 5px 8px var(--text-dark);
+  align-items: center;
+  overflow-y: scroll;
+  padding: 20px 15px;
+  border-radius: 10px;
+  row-gap: 20px;
 }
 
-.input-container input {
-  width: 93%;
-  height: 30px;
-  border-radius: 5px;
-  border: none;
-  padding: 5px;
-}
-
-.input-container textarea {
-  width: 93%;
-  height: 77px;
-  resize: none;
-  border-radius: 5px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding: 5px;
-}
-
-
-.input-container button {
-  width: 200px;
-  height: 45px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  border-radius: 5px;
+.location {
   background-color: var(--cream);
-  border: none;
-  color: var(--text-dark);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: .8em;
-  margin: 25px auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  cursor: pointer;
+  border-radius: 10px;
 }
 
-.input-container button:hover {
+.location img {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 5px;
+}
 
-  background-color: var(--background-low);
 
+.location p {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.image {
+  width: 200px;
+  height: 200px;
+  background-color: gray;
+}
+
+.locations-container::-webkit-scrollbar {
+  display: none;
+}
+
+.right-part {
+  background-color: var(--cream);
+  height: 100%;
+  width: calc(100% - 250px);
+  box-shadow: 0px 0px 10px var(--text-dark);
+  border-radius: 10px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.image-loc {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.right-part:hover .image-overlay {
+  opacity: 1;
 }

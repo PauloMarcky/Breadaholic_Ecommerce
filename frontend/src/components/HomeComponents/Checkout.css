@@ -60,10 +60,11 @@
 }
 
 .note {
-  color: rgba(188, 0, 0, 0.933);
+  color: rgba(226, 37, 37, 0.933);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: .7em;
   margin: 5px 0px;
+  text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.725);
 }
 
 .order-location {
@@ -85,6 +86,7 @@
   margin: 0px auto;
   display: flex;
   gap: 20px;
+  align-items: center;
 }
 
 .landmark {
@@ -95,6 +97,8 @@
   width: 410px;
   height: 50px;
   resize: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 5px;
 }
 
 select {
@@ -105,6 +109,7 @@ select {
 .location input {
   width: 240px;
   height: 30px;
+  padding: 5px;
 }
 
 .order-pricing {
@@ -167,4 +172,64 @@ select {
 
 .cancel:hover {
   background-color: rgb(144, 0, 0);
+}
+
+.checkoutSelect__control {
+  display: flex !important;
+  align-items: center !important;
+  width: 150px;
+  height: 30px !important;
+  min-height: 30px !important;
+  background: white;
+  border: 1.5px solid rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  font-family: 'Lato', sans-serif;
+  color: #000000;
+  outline: none;
+  overflow: hidden;
+}
+
+.checkoutSelect__menu {
+  color: black;
+  font-size: .8em;
+}
+
+.checkoutSelect__value-container {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  padding: 0 8px !important;
+  margin: 0 !important;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.8rem;
+}
+
+.checkoutSelect__placeholder,
+.checkoutSelect__single-value {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  left: 8px !important;
+}
+
+.checkoutSelect__indicators-container {
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  color: black;
+}
+
+.checkoutSelect__indicator {
+  padding: 4px !important;
+
+}
+
+.checkoutSelect__input-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
 }

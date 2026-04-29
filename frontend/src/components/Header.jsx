@@ -64,6 +64,30 @@ export function Header() {
     setUserData(null);
     navigate("/");
   };
+
+  useEffect(() => {
+    if (viewAllOrders) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [viewAllOrders]);
+
+  useEffect(() => {
+    if (proceedCheckout) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [proceedCheckout]);
   return (
     <>
       <header className="nav-wrapper">
@@ -87,7 +111,7 @@ export function Header() {
             </NavLink>
 
             <NavLink
-              to="/contact"
+              to="/contacts"
               className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
             >
               Talk to us

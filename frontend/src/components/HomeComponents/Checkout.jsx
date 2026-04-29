@@ -1,6 +1,22 @@
 import './Checkout.css'
+import Select from 'react-select'
 
 export function Checkout({ onCancel }) {
+
+  const barangayOptions = [
+    { value: "Calao East", label: "Calao East" },
+    { value: "Calaocan", label: "Calaocan" },
+    { value: "Calao West", label: "Calao West" },
+    { value: "Dubinan East", label: "Dubinan East" },
+    { value: "Dubinan West", label: "Dubinan West" },
+    { value: "Patul", label: "Patul" },
+    { value: "Plaridel", label: "Plaridel" },
+    { value: "Rosario", label: "Rosario" },
+    { value: "Sinsayon", label: "Sinsayon" },
+    { value: "Victory Norte", label: "Victory Norte" },
+    { value: "Victory Sur", label: "Victory Sur" },
+    { value: "Villasis", label: "Villasis" },
+  ];
   return (
     <>
       <div className="checkout-container">
@@ -34,12 +50,11 @@ export function Checkout({ onCancel }) {
         <div className="order-location">
           <p>Address</p>
           <div className="location">
-            <select id="cars" name="cars">
-              <option value="volvo">Volvo</option>
-              <option value="saab">Saab</option>
-              <option value="fiat">Fiat</option>
-              <option value="audi">Audi</option>
-            </select>
+            <Select
+              classNamePrefix="checkoutSelect"
+              options={barangayOptions}
+              placeholder="Select Barangay"
+            />
             <input type="text" placeholder="Street" />
           </div>
           <p>Landmark</p>

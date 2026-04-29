@@ -3,6 +3,7 @@ import { Home } from './pages/Home'
 import { Menu } from './pages/Menu'
 import './App.css'
 import { Registration } from "./pages/Registration"
+import { TalkToUs } from "./pages/TalkToUs"
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Registration />} />
         <Route path="/home" element={<Home />} />
         <Route path="/menu" element={<Menu />} />
+        <Route path="/contacts" element={<TalkToUs />} />
       </Routes>
     </BrowserRouter>
   )
