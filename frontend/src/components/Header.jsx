@@ -37,6 +37,30 @@ export function Header() {
     setIsCartOpen(!isCartOpen);
   }
 
+  useEffect(() => {
+    if (isCartOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCartOpen]);
+
+  useEffect(() => {
+    if (isProfileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isProfileOpen]);
+
   const fetchSpecificUser = (id) => {
     axios.get(`http://127.0.0.1:5000/getUser/${id}`)
       .then(res => {

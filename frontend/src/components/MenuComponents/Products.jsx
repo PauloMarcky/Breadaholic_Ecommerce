@@ -37,7 +37,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -48,7 +48,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -59,7 +59,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -70,7 +70,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -81,7 +81,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -92,7 +92,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -103,7 +103,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -114,7 +114,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -125,7 +125,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -136,7 +136,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
         <div className="product-wrapper">
@@ -147,7 +147,7 @@ export function Products() {
           </div>
           <div className="btn-below">
             <button>Add to Basket</button>
-            <input type="number" />
+            <input type="number" value={1} />
           </div>
         </div>
       </div>

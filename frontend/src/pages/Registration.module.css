@@ -113,18 +113,6 @@
   position: relative;
 }
 
-.rightSideContainer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(-45deg,
-      rgba(180, 100, 10, 0.06) 0px,
-      rgba(170, 94, 7, 0.059) 4px,
-      transparent 1px,
-      transparent 10px);
-  pointer-events: none;
-}
 
 /* ── Form Section ────────────────────────────────────── */
 .formContainer {

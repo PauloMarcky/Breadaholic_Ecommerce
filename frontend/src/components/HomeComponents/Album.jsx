@@ -1,5 +1,6 @@
 import './Album.css'
 import { useRef } from 'react';
+import { NavLink } from 'react-router-dom'
 
 export function Album() {
 
@@ -21,7 +22,9 @@ export function Album() {
         <div className="albums-label">
           <h2>Photo<br />Albums</h2>
           <p>come and join us</p>
-          <button>FIND US HERE</button>
+          <NavLink to={'/locations'}>
+            <button>FIND US HERE</button>
+          </NavLink>
         </div>
 
         <button className="albums-arrow" onClick={() => scroll('left')} ><img src="../public/left-arrow.png" alt="" /></button>

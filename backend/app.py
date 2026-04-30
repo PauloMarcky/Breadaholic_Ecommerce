@@ -38,7 +38,7 @@ def home():
             text-align: center;
         ">
             <h1 style="color: #2ecc71; margin-bottom: 10px;">Backend Online</h1>
-            <p style="color: #666;">E-commerce API is running successfully, HECK YA.</p>
+            <p style="color: #666;">LES GUUU</p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
             <code style="background: #eee; padding: 5px 10px; border-radius: 4px;">Status: 200 OK</code>
         </div>

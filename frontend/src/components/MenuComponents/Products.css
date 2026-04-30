@@ -71,6 +71,11 @@
   text-transform: uppercase;
 }
 
+.btn-below button:hover {
+  background-color: var(--right-background);
+  cursor: pointer;
+}
+
 .product-detail-overlay {
   opacity: 0;
   visibility: hidden;
