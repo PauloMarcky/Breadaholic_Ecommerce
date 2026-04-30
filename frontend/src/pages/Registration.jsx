@@ -116,6 +116,9 @@ export function Registration() {
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem("currentUserId", data.user_id);
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userName', data.first_name);
+        sessionStorage.setItem('justLoggedIn', 'true');
         navigate("/home");
       }
       else {
@@ -132,7 +135,6 @@ export function Registration() {
   return (
     <div className={style.pageBg}>
       <div className={style.mainContainer}>
-
 
         < div className={style.leftSideContainer}>
           <div className={style.logoContainer}>

@@ -161,7 +161,8 @@ def logInAuthentication():
             if user['password'] == password:
                 return jsonify({
                     "message": "Log In Successful",
-                    "user_id": user['user_id']
+                    "user_id": user['user_id'],
+                    "first_name": user['first_name']
                 }), 200
             else:
                 return jsonify({"error": "Incorrect password"}), 401
@@ -206,19 +207,16 @@ def add_to_cart():
         conn = db_pool.get_connection()  # Use the pool
         cursor = conn.cursor(dictionary=True)
 
-        # 1. Check if item exists
         check_query = "SELECT ordItem_id, quantity FROM cart_item WHERE user_id = %s AND product_id = %s"
         cursor.execute(check_query, (uid, pid))
         existing_item = cursor.fetchone()
 
         if existing_item:
-            # 2. Update quantity
             new_qty = existing_item['quantity'] + int(qty)
             update_query = "UPDATE cart_item SET quantity = %s WHERE ordItem_id = %s"
             cursor.execute(
                 update_query, (new_qty, existing_item['ordItem_id']))
         else:
-            # 3. Insert new
             insert_query = "INSERT INTO cart_item (user_id, product_id, quantity) VALUES (%s, %s, %s)"
             cursor.execute(insert_query, (uid, pid, qty))
 
