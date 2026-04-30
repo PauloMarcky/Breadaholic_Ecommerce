@@ -1,9 +1,15 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from mysql.connector import pooling  # Add this import
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from mysql.connector import pooling
 
 app = Flask(__name__)
-CORS(app)
+# Change this to a secure random key
+app.config['SECRET_KEY'] = 'your-secret-key-here'
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Initialize SocketIO with CORS support
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 db_config = {
     'host': 'localhost',
@@ -15,6 +21,43 @@ db_config = {
 db_pool = pooling.MySQLConnectionPool(
     pool_name="mypool", pool_size=5, **db_config)
 
+
+# ==================== SOCKETIO EVENT HANDLERS ====================
+
+@socketio.on('connect')
+def handle_connect():
+    print(f'Client connected: {request.sid}')
+    emit('connection_response', {
+         'message': 'Connected to Breadaholic server!'})
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f'Client disconnected: {request.sid}')
+
+
+@socketio.on('join_user_room')
+def handle_join_room(data):
+    """Allow users to join their personal room for targeted notifications"""
+    user_id = data.get('user_id')
+    if user_id:
+        room = f'user_{user_id}'
+        join_room(room)
+        print(f'User {user_id} joined room: {room}')
+        emit('joined_room', {'room': room, 'user_id': user_id})
+
+
+@socketio.on('leave_user_room')
+def handle_leave_room(data):
+    """Allow users to leave their personal room"""
+    user_id = data.get('user_id')
+    if user_id:
+        room = f'user_{user_id}'
+        leave_room(room)
+        print(f'User {user_id} left room: {room}')
+
+
+# ==================== REST API ROUTES ====================
 
 @app.route('/')
 def home():
@@ -38,7 +81,7 @@ def home():
             text-align: center;
         ">
             <h1 style="color: #2ecc71; margin-bottom: 10px;">Backend Online</h1>
-            <p style="color: #666;">LES GUUU</p>
+            <p style="color: #666;">LES GUUU - WebSocket Ready 🚀</p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
             <code style="background: #eee; padding: 5px 10px; border-radius: 4px;">Status: 200 OK</code>
         </div>
@@ -67,7 +110,6 @@ def get_user(user_id):
 @app.route('/getFeatured', methods=['GET'])
 def get_features():
     try:
-
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
@@ -86,7 +128,6 @@ def get_features():
 def add_user():
     conn = None
     try:
-
         data = request.json
 
         fname = data.get('first_name')
@@ -127,7 +168,7 @@ def add_user():
 
     except Exception as err:
         if conn:
-            conn.rollback()  # Undo changes if an error occurs
+            conn.rollback()
         return jsonify({"error": str(err)}), 500
     finally:
         if conn and conn.is_connected():
@@ -179,7 +220,6 @@ def logInAuthentication():
 @app.route('/getProducts', methods=['GET'])
 def get_products():
     try:
-
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
@@ -194,17 +234,20 @@ def get_products():
         return jsonify({"error": str(err)}), 404
 
 
-# Changed from /addCart to match React
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     conn = None
     try:
         data = request.json
+
         uid = data.get('user_id')
         pid = data.get('product_id')
         qty = data.get('quantity', 1)
 
-        conn = db_pool.get_connection()  # Use the pool
+        if not uid:
+            return jsonify({"error": "User ID is required. Are you logged in?"}), 401
+
+        conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
         check_query = "SELECT ordItem_id, quantity FROM cart_item WHERE user_id = %s AND product_id = %s"
@@ -221,15 +264,36 @@ def add_to_cart():
             cursor.execute(insert_query, (uid, pid, qty))
 
         conn.commit()
+
+        # Get product details for the notification
+        cursor.execute(
+            "SELECT product_name, price FROM Products WHERE product_id = %s", (pid,))
+        product = cursor.fetchone()
+
+        print(f"Item added to cart for User ID: {uid}")
+
+        # Emit real-time notification to the user's room
+        socketio.emit('cart_updated', {
+            'user_id': uid,
+            'product_id': pid,
+            'product_name': product['product_name'] if product else 'Unknown',
+            'quantity': qty,
+            'action': 'added',
+            'message': f"Added {qty} item(s) to cart"
+        }, room=f'user_{uid}')
+
         return jsonify({"status": "success", "message": "Cart updated"}), 200
 
     except Exception as err:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(err)}), 500
     finally:
         if conn:
             conn.close()
 
 
+# ==================== MISSING ROUTE - THIS WAS THE BUG ====================
 @app.route('/view_cart/<int:user_id>', methods=['GET'])
 def view_cart(user_id):
     conn = None
@@ -239,6 +303,8 @@ def view_cart(user_id):
 
         query = """
             SELECT 
+                c.ordItem_id,
+                p.product_id,
                 p.product_name, 
                 p.price, 
                 p.image, 
@@ -250,6 +316,9 @@ def view_cart(user_id):
         """
         cursor.execute(query, (user_id,))
         rows = cursor.fetchall()
+
+        cursor.close()
+
         return jsonify(rows), 200
     except Exception as err:
         return jsonify({"error": str(err)}), 500
@@ -258,5 +327,106 @@ def view_cart(user_id):
             conn.close()
 
 
+@app.route('/reduce_quantity', methods=['POST'])
+def reduce_quantity():
+    conn = None
+    try:
+        data = request.json
+        uid = data.get('user_id')
+        pid = data.get('product_id')
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check current quantity
+        cursor.execute(
+            "SELECT ordItem_id, quantity FROM cart_item WHERE user_id = %s AND product_id = %s",
+            (uid, pid)
+        )
+        item = cursor.fetchone()
+
+        if item and item['quantity'] > 1:
+            new_qty = item['quantity'] - 1
+            cursor.execute(
+                "UPDATE cart_item SET quantity = %s WHERE ordItem_id = %s",
+                (new_qty, item['ordItem_id'])
+            )
+            conn.commit()
+
+            # Get product name for better notifications
+            cursor.execute(
+                "SELECT product_name FROM Products WHERE product_id = %s", (pid,))
+            product = cursor.fetchone()
+
+            # Emit update with details
+            socketio.emit('cart_updated', {
+                'user_id': uid,
+                'product_id': pid,
+                'product_name': product['product_name'] if product else 'Item',
+                'action': 'reduced',
+                'new_quantity': new_qty
+            }, room=f'user_{uid}')
+
+            return jsonify({"status": "success", "new_quantity": new_qty}), 200
+
+        return jsonify({"error": "Cannot reduce below 1"}), 400
+
+    except Exception as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ==================== ADMIN BROADCAST EXAMPLE ====================
+@app.route('/broadcast_new_product', methods=['POST'])
+def broadcast_new_product():
+    """Example: Admin can broadcast when a new product is featured"""
+    try:
+        data = request.json
+        product_name = data.get('product_name')
+
+        # Broadcast to ALL connected clients
+        socketio.emit('new_product_alert', {
+            'message': f'New featured product: {product_name}!',
+            'product_name': product_name
+        }, broadcast=True)
+
+        return jsonify({"status": "success", "message": "Broadcast sent"}), 200
+    except Exception as err:
+        return jsonify({"error": str(err)}), 500
+
+
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    conn = None
+    try:
+        data = request.json
+        uid = data.get('user_id')
+        # We use the unique ID of the row in the cart_item table
+        item_id = data.get('ordItem_id')
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        # SQL Logic: Delete the specific row
+        query = "DELETE FROM cart_item WHERE ordItem_id = %s AND user_id = %s"
+        cursor.execute(query, (item_id, uid))
+
+        conn.commit()
+
+        # Real-time: Tell the frontend the cart has changed
+        socketio.emit('cart_updated', {'user_id': uid}, room=f'user_{uid}')
+
+        return jsonify({"status": "success", "message": "Item removed"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use socketio.run() instead of app.run()
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)

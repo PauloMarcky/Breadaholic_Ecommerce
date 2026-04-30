@@ -3,277 +3,227 @@ import { useState, useEffect } from "react";
 import axios from 'axios';
 import { Checkout } from "./HomeComponents/Checkout";
 import { AllOrders } from "./HomeComponents/AllOrders";
-import { useNavigate } from 'react-router-dom';
-import { NavLink } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
+import { socket, connectSocket, disconnectSocket } from '../utils/socket';
 
 export function Header() {
-
   const navigate = useNavigate();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [proceedCheckout, setProceedCheckout] = useState(false);
+  const [viewAllOrders, setViewAllOrders] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isCartOpen, setIsCartOpen] = useState(false)
-  const [userData, setUserData] = useState(null)
-  const [proceedCheckout, setProceedCheckout] = useState(false)
-  const [viewAllOrders, setViewAllOrders] = useState(false)
+  const currentUserId = localStorage.getItem("currentUserId");
 
-  const handleCheckout = () => {
-    setProceedCheckout(!proceedCheckout)
-  }
-  const handleViewingOrders = () => {
-    setViewAllOrders(!viewAllOrders)
-  }
-
-  useEffect(() => {
-    if (isCartOpen || isProfileOpen) {
-      document.body.classList.add('no-scroll');
-    } else {
-      document.body.classList.remove('no-scroll');
-    }
-
-    return () => document.body.classList.remove('no-scroll');
-  }, [isCartOpen, isProfileOpen]);
-
-  const openCartSideBar = () => {
-    setIsCartOpen(!isCartOpen);
-  }
-
-  useEffect(() => {
-    if (isCartOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isCartOpen]);
-
-  useEffect(() => {
-    if (isProfileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isProfileOpen]);
-
-  const fetchSpecificUser = (id) => {
-    axios.get(`http://127.0.0.1:5000/getUser/${id}`)
-      .then(res => {
-        setUserData(res.data);
-      })
-      .catch(err => {
-        console.log("Error fetching user for header:", err);
-      });
-  };
-
-  useEffect(() => {
-    const savedId = localStorage.getItem("currentUserId");
-
-    if (savedId) {
-      fetchSpecificUser(savedId);
-    }
-  }, []);
-
-  const openSidebar = () => {
-    setIsProfileOpen(!isProfileOpen)
-  }
+  // --- Handlers ---
+  const handleCheckout = () => setProceedCheckout(!proceedCheckout);
+  const handleViewingOrders = () => setViewAllOrders(!viewAllOrders);
+  const openCartSideBar = () => setIsCartOpen(!isCartOpen);
+  const openSidebar = () => setIsProfileOpen(!isProfileOpen);
 
   const handleLogout = () => {
-    localStorage.removeItem("currentUserId");
+    disconnectSocket(currentUserId);
+    localStorage.clear();
     setUserData(null);
     navigate("/");
   };
 
+  // --- Unified Scroll Lock Logic ---
   useEffect(() => {
-    if (viewAllOrders) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+    const shouldLock = isCartOpen || isProfileOpen || viewAllOrders || proceedCheckout;
+    document.body.style.overflow = shouldLock ? 'hidden' : 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isCartOpen, isProfileOpen, viewAllOrders, proceedCheckout]);
+
+  // --- Fetch Cart Function ---
+  const fetchCart = async () => {
+    try {
+      if (!currentUserId) return;
+      const response = await axios.get(`http://127.0.0.1:5000/view_cart/${currentUserId}`);
+      setCartItems(response.data);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+    }
+  };
+
+  // --- Initial Data Fetching & WebSocket Setup ---
+  useEffect(() => {
+    if (currentUserId) {
+      // Fetch User Profile
+      axios.get(`http://127.0.0.1:5000/getUser/${currentUserId}`)
+        .then(res => setUserData(res.data))
+        .catch(err => console.log("User fetch error:", err));
+
+      // Fetch Cart Items
+      fetchCart();
+
+      // Connect to WebSocket
+      connectSocket(currentUserId);
+
+      // Listen for real-time cart updates
+      socket.on('cart_updated', (data) => {
+        console.log('Cart updated:', data);
+
+        // Refresh cart
+        fetchCart();
+      });
+
     }
 
+    // Cleanup on unmount
     return () => {
-      document.body.style.overflow = 'unset';
+      socket.off('cart_updated');
+      socket.off('new_product_alert');
+      if (currentUserId) {
+        disconnectSocket(currentUserId);
+      }
     };
-  }, [viewAllOrders]);
+  }, [currentUserId]);
 
-  useEffect(() => {
-    if (proceedCheckout) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+  const handleQuantityChange = async (productId, type) => {
+    const endpoint = type === "add" ? "/add_to_cart" : "/reduce_quantity";
+
+    try {
+      await axios.post(`http://127.0.0.1:5000${endpoint}`, {
+        user_id: currentUserId,
+        product_id: productId,
+        quantity: 1 // Only used by add_to_cart route
+      });
+      // The Socket listener you set up earlier will automatically 
+      // call fetchCart() when the server emits 'cart_updated'
+    } catch (err) {
+      console.error("Failed to update quantity:", err);
     }
+  };
 
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [proceedCheckout]);
+  const handleRemoveItem = async (ordItemId) => {
+    try {
+      await axios.post("http://127.0.0.1:5000/remove_from_cart", {
+        user_id: currentUserId,
+        ordItem_id: ordItemId
+      });
+      // The socket listener handles the refresh automatically!
+    } catch (err) {
+      console.error("Remove Error:", err);
+    }
+  };
+
   return (
     <>
+
       <header className="nav-wrapper">
         <nav>
           <div className="logo-header-container">
-            <img src="./public/business-logo.png" />
+            <img src="./public/business-logo.png" alt="Logo" />
           </div>
+
           <div className="nav-link-container">
-            <NavLink
-              to="/home"
-              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-            >
-              Home
-            </NavLink>
-
-            <NavLink
-              to="/menu"
-              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-            >
-              Menu
-            </NavLink>
-
-            <NavLink
-              to="/contacts"
-              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-            >
-              Talk to us
-            </NavLink>
-
-            <NavLink
-              to="/locations"
-              className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-            >
-              Locations
-            </NavLink>
+            <NavLink to="/home" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Home</NavLink>
+            <NavLink to="/menu" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Menu</NavLink>
+            <NavLink to="/contacts" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Talk to us</NavLink>
+            <NavLink to="/locations" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Locations</NavLink>
           </div>
+
           <div className="nav-right-side">
             <div className="searching-container">
               <input type="text" placeholder="Search" />
               <button className="search-button"><img src="./public/search-icon.png" alt="" /></button>
             </div>
+
+            {/* Basket Trigger */}
             <div className="menu" onClick={openCartSideBar}>
+              <div className="total-cart-item">{cartItems.length}</div>
               <button className="menu-button"><img src="./public/cart-icon.png" alt="" /></button>
               <p>Basket</p>
             </div>
-            <>
-              <div className={`sidebar-overlay ${isCartOpen && 'visible'}`}>
+
+            {/* --- CART SIDEBAR --- */}
+            <div className={`sidebar-overlay ${isCartOpen && 'visible'}`} onClick={openCartSideBar}></div>
+            <div className={`cart-container ${isCartOpen ? 'active' : ''}`}>
+              <div className="title-exit-btn">
+                <h2>BASKET ITEMS</h2>
+                <button onClick={openCartSideBar}><img src="../public/hide-button.png" alt="" /></button>
               </div>
-              <div className={`cart-container ${isCartOpen ? 'active' : ''}`} >
-                <div className="title-exit-btn">
-                  <h2>BASKET ITEMS</h2>
-                  <button onClick={openCartSideBar} ><img src="../public/hide-button.png" alt="" /></button>
-                </div>
-                <div className="items-container">
-                  <div className="items">
-                    <input className="checkbox" type="checkbox" />
-                    <div className="item-display">
-                      <img src="./src/assets/cart-item.jpg" alt="" />
-                      <div className="item-infos">
-                        <h5>Croissant Filled With Chocolate Cream</h5>
-                        <p>8 Items Left</p>
-                        <h4>99 Pesos</h4>
+
+              <div className="items-container">
+                {cartItems.length > 0 ? (
+                  cartItems.map((item, index) => (
+                    <div className="items" key={item.ordItem_id || index}>
+                      <input className="checkbox" type="checkbox" />
+                      <div className="item-display">
+                        <img src={item.image || "./src/assets/cart-item.jpg"} alt={item.product_name} />
+                        <div className="item-infos">
+                          <h5>{item.product_name}</h5>
+                          <p>Qty: {item.quantity}</p>
+                          <h4>{item.price} Pesos</h4>
+                        </div>
+
+                        <button
+                          className="btn-adding"
+                          onClick={() => handleQuantityChange(item.product_id, 'add')}
+                        >
+                          +
+                        </button>
+
+                        <input type="number" min="1" value={item.quantity} readOnly />
+
+                        <button
+                          className="btn-deducting"
+                          onClick={() => handleQuantityChange(item.product_id, 'reduce')}
+                          disabled={item.quantity <= 1}
+                        >
+                          -
+                        </button>
                       </div>
-                      <input type="number" min="1" max="999999" step="1" value="1" />
+                      <button onClick={() => handleRemoveItem(item.ordItem_id)} className="remove-btn">
+                        <img src="../public/remove.png" alt="" />
+                      </button>
                     </div>
-                    <button className="remove-btn"><img src="../public/remove.png" alt="" /></button>
-                  </div>
-                  <div className="items">
-                    <input className="checkbox" type="checkbox" />
-                    <div className="item-display">
-                      <img src="./src/assets/cart-item.jpg" alt="" />
-                      <div className="item-infos">
-                        <h5>Croissant Filled With Chocolate Cream</h5>
-                        <p>8 Items Left</p>
-                        <h4>99 Pesos</h4>
-                      </div>
-                      <input type="number" min="1" max="999999" step="1" value="1" />
-                    </div>
-                    <button className="remove-btn"><img src="../public/remove.png" alt="" /></button>
-                  </div>
-                  <div className="items">
-                    <input className="checkbox" type="checkbox" />
-                    <div className="item-display">
-                      <img src="./src/assets/cart-item.jpg" alt="" />
-                      <div className="item-infos">
-                        <h5>Croissant Filled With Chocolate Cream</h5>
-                        <p>8 Items Left</p>
-                        <h4>99 Pesos</h4>
-                      </div>
-                      <input type="number" min="1" max="999999" step="1" value="1" />
-                    </div>
-                    <button className="remove-btn"><img src="../public/remove.png" alt="" /></button>
-                  </div>
-                  <div className="items">
-                    <input className="checkbox" type="checkbox" />
-                    <div className="item-display">
-                      <img src="./src/assets/cart-item.jpg" alt="" />
-                      <div className="item-infos">
-                        <h5>Croissant Filled With Chocolate Cream</h5>
-                        <p>8 Items Left</p>
-                        <h4>99 Pesos</h4>
-                      </div>
-                      <input type="number" min="1" max="999999" step="1" value="1" />
-                    </div>
-                    <button className="remove-btn"><img src="../public/remove.png" alt="" /></button>
-                  </div>
-                </div>
-                <div className="buttons-place">
-                  <button className="checkout" onClick={handleCheckout}>CHECKOUT</button>
-                  <div className={`checkout-overlay ${proceedCheckout && 'visible'}`}>
-                  </div>
-                  {proceedCheckout && <Checkout onCancel={handleCheckout} />}
-                  <button className="view" onClick={handleViewingOrders}>VIEW ALL ORDERS</button>
-                  <div className={`view-orders-overlay ${viewAllOrders && 'visible'}`}>
-                  </div>
-                  {viewAllOrders && <AllOrders onCancel={handleViewingOrders} />}
-                </div>
+                  ))
+                ) : (
+                  <p className="empty-cart-msg">Your basket is empty <br /> ORDER NOW</p>
+                )}
               </div>
-            </>
+
+              <div className="buttons-place">
+                <button className="checkout" onClick={handleCheckout}>CHECKOUT</button>
+                {proceedCheckout && <Checkout onCancel={handleCheckout} />}
+
+                <button className="view" onClick={handleViewingOrders}>VIEW ALL ORDERS</button>
+                {viewAllOrders && <AllOrders onCancel={handleViewingOrders} />}
+              </div>
+            </div>
+
+            {/* --- PROFILE SIDEBAR --- */}
             <div className="profile" onClick={openSidebar}>
               <button className="profile-button"><img src="./public/profile-icon.png" alt="" /></button>
               <p>Profile</p>
             </div>
-            <>
-              <div className={`sidebar-overlay ${isProfileOpen && 'visible'}`}></div>
-              <div className={`profile-detail-container ${isProfileOpen ? 'active' : ''}`}>
-                <div className="header-profile">
-                  <h2>Profile</h2>
-                  <button className="hide-profile-btn" onClick={openSidebar}><img src="./public/hide-button.png" alt="" /></button>
-                </div>
-                <div className="profile-image-container">
-                  <img className="profile-img" src={userData?.profile_picture || "/default-pfp.png"} alt="" />
-                  <button><img className="add-icon" src="./public/add-icon.png" alt="" /></button>
-                  <p>{userData ? `@${userData.first_name} ${userData.last_name}` : "Loading..."}</p>
-                </div>
-                <p className="personal-info-text">PERSONAL INFORMATIONS</p>
-                <ul className="profile-infos">
-                  <li>
-                    <div className="info-img-container">
-                      <img src="./public/phone-number.png" alt="" />
-                    </div>
-                    <p>{userData ? `${userData.mobile_number}` : "Loading..."}</p>
-                  </li>
-                  <li>
-                    <div className="info-img-container">
-                      <img src="./public/address.png" alt="" />
-                    </div>
-                    <p>{userData ? `${userData.barangay} ${userData.street_name}` : "Loading..."}</p>
-                  </li>
-                  <li>
-                    <div className="info-img-container">
-                      <img src="./public/date-joined.png" alt="" />
-                    </div>
-                    <p>{userData?.date_joined ? new Date(userData.date_joined).toLocaleDateString() : "Loading..."}</p>
-                  </li>
-                </ul>
-                <button className="logout-btn" onClick={handleLogout}>LOG OUT<img src="./public/logout-icon.png" alt="" /></button>
+
+            <div className={`sidebar-overlay ${isProfileOpen && 'visible'}`} onClick={openSidebar}></div>
+            <div className={`profile-detail-container ${isProfileOpen ? 'active' : ''}`}>
+              <div className="header-profile">
+                <h2>Profile</h2>
+                <button className="hide-profile-btn" onClick={openSidebar}><img src="./public/hide-button.png" alt="" /></button>
               </div>
-            </>
+              <div className="profile-image-container">
+                <img className="profile-img" src={userData?.profile_picture || "/default-pfp.png"} alt="" />
+                <button><img className="add-icon" src="./public/add-icon.png" alt="" /></button>
+                <p>{userData ? `@${userData.first_name} ${userData.last_name}` : "Guest"}</p>
+              </div>
+              <p className="personal-info-text">PERSONAL INFORMATION</p>
+              <ul className="profile-infos">
+                <li><img className="info-img-container" src="./public/phone-number.png" alt="" /><p>{userData?.mobile_number || "N/A"}</p></li>
+                <li><img className="info-img-container" src="./public/address.png" alt="" /><p>{userData ? `${userData.barangay} ${userData.street_name}` : "N/A"}</p></li>
+                <li><img className="info-img-container" src="./public/date-joined.png" alt="" /><p>{userData?.date_joined ? new Date(userData.date_joined).toLocaleDateString() : "N/A"}</p></li>
+              </ul>
+              <button className="logout-btn" onClick={handleLogout}>LOG OUT <img src="./public/logout-icon.png" alt="" /></button>
+            </div>
           </div>
         </nav>
-      </header >
+      </header>
     </>
-  )
+  );
 }
