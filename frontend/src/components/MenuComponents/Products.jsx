@@ -1,156 +1,70 @@
 import '../MenuComponents/Products.css'
 import { ProductSidebar } from '../MenuComponents/ProductSidebar'
 import { useState, useEffect } from 'react'
-
+import axios from 'axios';
 export function Products() {
-
+  const [AllProducts, setAllProducts] = useState([]);
+  const [CartItems, setCartItems] = useState([]);
   const [OpenDetails, setOpenDetails] = useState(false);
+  const currentUserId = 1;
 
-  function handleOpenDetail() {
-    setOpenDetails(!OpenDetails);
-  }
+  const fetchCart = () => {
+    axios.get(`http://127.0.0.1:5000/view_cart/${currentUserId}`)
+      .then(res => setCartItems(res.data))
+      .catch(err => console.error("Cart Fetch Error:", err));
+  };
 
   useEffect(() => {
-    if (OpenDetails) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    axios.get("http://127.0.0.1:5000/getProducts")
+      .then(res => setAllProducts(res.data))
+      .catch(err => console.error("Product Error:", err));
+    fetchCart();
+  }, []);
 
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [OpenDetails]);
+  const handleAddToBasket = (productId) => {
+    console.log("Button clicked for product:", productId); // CHECK YOUR CONSOLE FOR THIS
+
+    axios.post("http://127.0.0.1:5000/add_to_cart", { // MAKE SURE THIS MATCHES PYTHON
+      user_id: currentUserId,
+      product_id: productId,
+      quantity: 1
+    })
+      .then((res) => {
+        console.log("Server Response:", res.data);
+        fetchCart();
+        alert("Added!");
+      })
+      .catch(err => {
+        console.error("Add Error Detail:", err.response ? err.response.data : err.message);
+        alert("Failed to add! Check console.");
+      });
+  };
 
   return (
     <>
-      <div className={`product-detail-overlay ${OpenDetails && 'visible'}`}
-        onClick={handleOpenDetail}>
-      </div>
+      <div className={`product-detail-overlay ${OpenDetails ? 'visible' : ''}`} onClick={() => setOpenDetails(false)}></div>
+
       <div className="menu-right-side">
-        <div className="product-wrapper">
-          <img onClick={handleOpenDetail} className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          {<ProductSidebar isOpen={OpenDetails} />}
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
+        {AllProducts.map((product) => (
+          <div className="product-wrapper" key={product.product_id}>
+            <img onClick={() => setOpenDetails(true)} className="product-image" src={product.image} alt="" />
+
+            <ProductSidebar isOpen={OpenDetails} cartItems={CartItems} />
+
+            <div className="product-details">
+              <p>{product.product_name}</p>
+              <p className="price">₱{product.price}</p>
+            </div>
+            <div className="btn-below">
+              {/* Ensure this is exactly like this */}
+              <button onClick={() => handleAddToBasket(product.product_id)}>
+                Add to Basket
+              </button>
+              <input type="number" defaultValue={1} />
+            </div>
           </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
-        <div className="product-wrapper">
-          <img className="product-image" src="./src/assets/cart-item.jpg" alt="" />
-          <div className="product-details">
-            <p>Product Name</p>
-            <p className="price">100 Pesos</p>
-          </div>
-          <div className="btn-below">
-            <button>Add to Basket</button>
-            <input type="number" value={1} />
-          </div>
-        </div>
+        ))}
       </div>
     </>
-  )
+  );
 }

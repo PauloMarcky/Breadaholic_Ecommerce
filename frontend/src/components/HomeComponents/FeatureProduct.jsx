@@ -23,7 +23,7 @@ export function FeatureProduct() {
         <div className="products-grid">
 
           {featuredProductData && featuredProductData.map((product) => (
-            <div className="product-item" key={product.id}>
+            <div className="product-item" key={product.product_id}>
               <div className="product-placeholder">
                 <img src={product.image && product.image} />
               </div>
