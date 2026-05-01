@@ -673,7 +673,6 @@ nav {
 .checkout-overlay {
   opacity: 0;
   visibility: hidden;
-  /* display: none;  <-- DELETE THIS LINE */
   transition: opacity 0.3s ease;
 
   /* Make sure it covers the screen like the other one */

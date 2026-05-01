@@ -6,6 +6,7 @@ import { AllOrders } from "./HomeComponents/AllOrders";
 import { useNavigate, NavLink } from 'react-router-dom';
 import { socket, connectSocket, disconnectSocket } from '../utils/socket';
 
+
 export function Header() {
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -14,6 +15,7 @@ export function Header() {
   const [proceedCheckout, setProceedCheckout] = useState(false);
   const [viewAllOrders, setViewAllOrders] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
 
   const currentUserId = localStorage.getItem("currentUserId");
 
@@ -28,6 +30,14 @@ export function Header() {
     localStorage.clear();
     setUserData(null);
     navigate("/");
+  };
+
+  const toggleItemSelection = (itemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
   };
 
   // --- Unified Scroll Lock Logic ---
@@ -48,39 +58,43 @@ export function Header() {
     }
   };
 
-  // --- Initial Data Fetching & WebSocket Setup ---
   useEffect(() => {
-    if (currentUserId) {
-      // Fetch User Profile
-      axios.get(`http://127.0.0.1:5000/getUser/${currentUserId}`)
-        .then(res => setUserData(res.data))
-        .catch(err => console.log("User fetch error:", err));
+    // Only proceed if we have a user
+    if (!currentUserId) return;
 
-      // Fetch Cart Items
-      fetchCart();
+    // 1. Define an async function to handle initial data loading
+    const loadInitialData = async () => {
+      try {
+        // Fetch User Profile
+        const userRes = await axios.get(`http://127.0.0.1:5000/getUser/${currentUserId}`);
+        setUserData(userRes.data);
 
-      // Connect to WebSocket
-      connectSocket(currentUserId);
+        // Fetch Cart Items
+        await fetchCart();
 
-      // Listen for real-time cart updates
-      socket.on('cart_updated', (data) => {
-        console.log('Cart updated:', data);
-
-        // Refresh cart
-        fetchCart();
-      });
-
-    }
-
-    // Cleanup on unmount
-    return () => {
-      socket.off('cart_updated');
-      socket.off('new_product_alert');
-      if (currentUserId) {
-        disconnectSocket(currentUserId);
+        // Connect to WebSocket
+        connectSocket(currentUserId);
+      } catch (err) {
+        console.error("Initialization error:", err);
       }
     };
-  }, [currentUserId]);
+
+    loadInitialData();
+
+    // 2. Define the socket callback separately for easy cleanup
+    const handleCartUpdate = (data) => {
+      console.log('Cart updated via Socket:', data);
+      fetchCart();
+    };
+
+    socket.on('cart_updated', handleCartUpdate);
+
+    // 3. CLEANUP FUNCTION (This stops the error and prevents memory leaks)
+    return () => {
+      socket.off('cart_updated', handleCartUpdate);
+      // If your connectSocket has a disconnect logic, put it here too
+    };
+  }, [currentUserId]); // Added currentUserId as a dependency
 
   const handleQuantityChange = async (productId, type) => {
     const endpoint = type === "add" ? "/add_to_cart" : "/reduce_quantity";
@@ -151,7 +165,12 @@ export function Header() {
                 {cartItems.length > 0 ? (
                   cartItems.map((item, index) => (
                     <div className="items" key={item.ordItem_id || index}>
-                      <input className="checkbox" type="checkbox" />
+                      <input
+                        className="checkbox"
+                        type="checkbox"
+                        checked={selectedItems.includes(item.ordItem_id)}
+                        onChange={() => toggleItemSelection(item.ordItem_id)}
+                      />
                       <div className="item-display">
                         <img src={item.image || "./src/assets/cart-item.jpg"} alt={item.product_name} />
                         <div className="item-infos">
@@ -188,8 +207,13 @@ export function Header() {
               </div>
 
               <div className="buttons-place">
-                <button className="checkout" onClick={handleCheckout}>CHECKOUT</button>
-                {proceedCheckout && <Checkout onCancel={handleCheckout} />}
+                <button className="checkout" onClick={handleCheckout} disabled={selectedItems.length === 0}
+                >CHECKOUT ({selectedItems.length})</button>
+                <div className={`sidebar-overlay ${proceedCheckout && 'visible'}`}></div>
+                {proceedCheckout && <Checkout onCancel={handleCheckout}
+                  itemsToBuy={cartItems.filter(item => selectedItems.includes(item.ordItem_id))}
+                  setSelectedItems={setSelectedItems}
+                />}
 
                 <button className="view" onClick={handleViewingOrders}>VIEW ALL ORDERS</button>
                 {viewAllOrders && <AllOrders onCancel={handleViewingOrders} />}

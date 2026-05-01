@@ -81,7 +81,6 @@ def home():
             text-align: center;
         ">
             <h1 style="color: #2ecc71; margin-bottom: 10px;">Backend Online</h1>
-            <p style="color: #666;">LES GUUU - WebSocket Ready 🚀</p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
             <code style="background: #eee; padding: 5px 10px; border-radius: 4px;">Status: 200 OK</code>
         </div>
@@ -293,7 +292,6 @@ def add_to_cart():
             conn.close()
 
 
-# ==================== MISSING ROUTE - THIS WAS THE BUG ====================
 @app.route('/view_cart/<int:user_id>', methods=['GET'])
 def view_cart(user_id):
     conn = None
@@ -302,13 +300,13 @@ def view_cart(user_id):
         cursor = conn.cursor(dictionary=True)
 
         query = """
-            SELECT 
+            SELECT
                 c.ordItem_id,
                 p.product_id,
-                p.product_name, 
-                p.price, 
-                p.image, 
-                c.quantity, 
+                p.product_name,
+                p.price,
+                p.image,
+                c.quantity,
                 (p.price * c.quantity) AS subtotal
             FROM cart_item c
             JOIN Products p ON c.product_id = p.product_id
@@ -427,6 +425,153 @@ def remove_from_cart():
             conn.close()
 
 
+@app.route('/confirm_order', methods=['POST'])
+def confirm_order():
+    conn = None
+    try:
+        data = request.json
+        uid = data.get('user_id')
+        items = data.get('items')
+        address = data.get('address')
+        # This should be the grand total (products + shipping)
+        total_price = data.get('total_price')
+
+        shipping_fee = 50  # Matching your React code
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        # 1. Insert into ORDERS
+        # Fields: order_id(auto), user_id, barangay, street_name, landmark, order_total, shipping_fee, status
+        order_query = """
+            INSERT INTO ORDERS (user_id, barangay, street_name, landmark, order_total, shipping_fee, status)
+            VALUES (%s, %s, %s, %s, %s, %s, 'Pending')
+        """
+        cursor.execute(order_query, (
+            uid,
+            address['barangay'],
+            address['street'],
+            address['landmark'],
+            total_price,
+            shipping_fee
+        ))
+
+        # Get the ID generated for this specific order
+        new_order_id = cursor.lastrowid
+
+        # 2. Insert into ORDER_ITEMS
+        # Fields: ord_id(auto), order_id, product_id, quantity, price
+        # Note: We use 'new_order_id' for the 'order_id' column
+        item_query = """
+            INSERT INTO ORDER_ITEMS (order_id, product_id, quantity, price)
+            VALUES (%s, %s, %s, %s)
+        """
+        for item in items:
+            cursor.execute(item_query, (
+                new_order_id,
+                item['product_id'],
+                item['quantity'],
+                item['price']
+            ))
+
+        # 3. Clean up cart_item table
+        delete_cart_query = "DELETE FROM cart_item WHERE user_id = %s AND product_id = %s"
+        for item in items:
+            cursor.execute(delete_cart_query, (uid, item['product_id']))
+
+        conn.commit()
+
+        # Notify frontend
+        socketio.emit('cart_updated', {'user_id': uid}, room=f'user_{uid}')
+
+        return jsonify({"status": "success", "order_id": new_order_id}), 201
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"CRITICAL ERROR: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/add_feedback', methods=['POST'])
+def add_feedback():
+    conn = None
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        message = data.get('message')
+        rating = data.get('rating')
+
+        if not user_id or not message or not rating:
+            return jsonify({"error": "Missing data"}), 400
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        insert_query = """
+            INSERT INTO feedback (user_id, message, rating)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(insert_query, (user_id, message, rating))
+        conn.commit()
+
+        fetch_query = """
+            SELECT f.message, f.rating, u.first_name, u.last_name, u.profile_picture
+            FROM feedback f
+            JOIN Users u ON f.user_id = u.user_id
+            WHERE f.user_id = %s
+            ORDER BY f.rev_id DESC
+            LIMIT 1
+        """
+        cursor.execute(fetch_query, (user_id,))
+        columns = [col[0] for col in cursor.description]
+        new_review = dict(zip(columns, cursor.fetchone()))
+
+        # ✅ No broadcast=True — socketio.emit() from a route already goes to ALL clients
+        socketio.emit('new_feedback_received', new_review)
+
+        return jsonify({"status": "success"}), 201
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error saving feedback: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/get_feedbacks', methods=['GET'])
+def get_feedbacks():
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        query = """
+            SELECT f.message, f.rating, u.first_name, u.last_name, u.profile_picture
+            FROM feedback f
+            JOIN Users u ON f.user_id = u.user_id
+            ORDER BY f.rev_id DESC
+        """
+        cursor.execute(query)
+
+        columns = [column[0] for column in cursor.description]
+        feedbacks = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        return jsonify(feedbacks), 200
+
+    except Exception as e:
+        print(f"Error fetching feedbacks: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 if __name__ == '__main__':
-    # Use socketio.run() instead of app.run()
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
