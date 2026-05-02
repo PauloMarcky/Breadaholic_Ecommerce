@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { socket, connectSocket } from '../../utils/socket.js';
 
-export function Products() {
+export function Products({ filters }) {
   const [AllProducts, setAllProducts] = useState([]);
   const [CartItems, setCartItems] = useState([]);
   const [OpenDetails, setOpenDetails] = useState(false);
@@ -29,18 +29,15 @@ export function Products() {
     // Fetch cart
     fetchCart();
 
-    // Connect to WebSocket if user is logged in
     if (currentUserId) {
       connectSocket(currentUserId);
 
-      // Listen for cart updates
       socket.on('cart_updated', (data) => {
-        console.log('🔔 Real-time cart update:', data);
+        console.log('Real-time cart update:', data);
         fetchCart(); // Auto-refresh cart
       });
     }
 
-    // Cleanup
     return () => {
       socket.off('cart_updated');
     };
@@ -75,14 +72,31 @@ export function Products() {
     setOpenDetails(true);
   };
 
+  const filteredProducts = AllProducts
+    .filter(p => filters.category === 'All' || p.category === filters.category)
+    .filter(p => p.price >= filters.minPrice && p.price <= filters.maxPrice)
+    .sort((a, b) => {
+      if (filters.sortBy === 'alphabetically') return a.product_name.localeCompare(b.product_name);
+      if (filters.sortBy === 'low_to_high') return a.price - b.price;
+      if (filters.sortBy === 'high_to_low') return b.price - a.price;
+      return b.product_id - a.product_id;
+    });
+
+
   return (
     <>
+      <div className={`product-detail-overlay ${OpenDetails ? 'visible' : ''}`}
+        onClick={() => setOpenDetails(false)} />
 
-
-      <div className={`product-detail-overlay ${OpenDetails ? 'visible' : ''}`} onClick={() => setOpenDetails(false)}></div>
+      <ProductSidebar
+        isOpen={OpenDetails}
+        product={selectedProduct}
+        cartItems={CartItems}
+        onAddToCart={handleAddToBasket}
+      />
 
       <div className="menu-right-side">
-        {AllProducts.map((product) => (
+        {filteredProducts.map((product) => (
           <div className="product-wrapper" key={product.product_id}>
             <img
               onClick={() => handleProductClick(product)}
@@ -90,36 +104,18 @@ export function Products() {
               src={product.image}
               alt={product.product_name}
             />
-
-            {selectedProduct && (
-              <ProductSidebar
-                isOpen={OpenDetails}
-                cartItems={CartItems}
-                product={selectedProduct}
-              />
-            )}
-
             <div className="product-details">
               <p>{product.product_name}</p>
-              <p className="price">₱{product.price}</p>
+              <p className="price-wrapper">₱{product.price}</p>
             </div>
-
             <div className="btn-below">
               <button onClick={(e) => {
-                // We look for the input element next to this button
                 const qtyInput = e.target.parentNode.querySelector('input');
                 handleAddToBasket(product.product_id, parseInt(qtyInput.value));
               }}>
                 Add to Basket
               </button>
-
-              {/* Add a className so it's easy to find, and ensure it has a value */}
-              <input
-                type="number"
-                className="product-qty-input"
-                defaultValue={1}
-                min={1}
-              />
+              <input type="number" className="product-qty-input" defaultValue={1} min={1} />
             </div>
           </div>
         ))}

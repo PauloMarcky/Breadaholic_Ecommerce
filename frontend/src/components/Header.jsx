@@ -40,7 +40,6 @@ export function Header() {
     );
   };
 
-  // --- Unified Scroll Lock Logic ---
   useEffect(() => {
     const shouldLock = isCartOpen || isProfileOpen || viewAllOrders || proceedCheckout;
     document.body.style.overflow = shouldLock ? 'hidden' : 'unset';

@@ -1,48 +1,74 @@
 import './MenuCategories.css';
+export function MenuCategories({ filters, setFilters }) {
 
-export function MenuCategories() {
+  const handleCategory = (e) => {
+    setFilters(prev => ({ ...prev, category: e.target.value }));
+  };
+
+  const handleSort = (e) => {
+    setFilters(prev => ({ ...prev, sortBy: e.target.value }));
+  };
+
+  const handleMinPrice = (e) => {
+    setFilters(prev => ({ ...prev, minPrice: Number(e.target.value) }));
+  };
+
+  const handleMaxPrice = (e) => {
+    setFilters(prev => ({ ...prev, maxPrice: Number(e.target.value) }));
+  };
+
   return (
-    <>
-      <div className="menu-left-sidebar">
-        <div className="menu-wrapper">
-          <div className="menu-heading">
-            <h3>CHOOSE WITH YOUR HEART</h3>
-          </div>
-          <div className="menu-category">
-            <p>MENU CATEGORY</p>
-            <div className="radio-btn">
-              <label for="radio"><input type="radio" name="tea" id="1" /> Bread </label>
-              <label for="radio"><input type="radio" name="coffee" id="2" /> Coffee </label>
-              <label for="radio"><input type="radio" name="bread" id="3" /> Tea </label>
-            </div>
-          </div>
-          <div className="menu-sorting">
-            <p>Sort</p>
-            <select name="sort-options" id=" sort-options">
-              <option value="newest">Newest</option>
-              <option value="alpabhetically">Name: A-Z</option>
-              <option value="low_to_high">Price: Low - High</option>
-              <option value="high_to_low">Price: High - low</option>
-            </select>
-
-            <p>Price Range</p>
-
-            <div className="filter-row">
-
-              <span className="price-label">$<span id="min-price-text">20</span></span>
-
-              <div className="range-slider-container">
-                <div className="slider-track"></div>
-                <input type="range" min="0" max="100" value="20" id="min-price" />
-                <input type="range" min="0" max="100" value="80" id="max-price" />
-              </div>
-
-              <span className="price-label">$<span id="max-price-text">80</span></span>
-            </div>
-
+    <div className="menu-left-sidebar">
+      <div className="menu-wrapper">
+        <h3 className='menu-heading'>CHOOSE WITH YOUR HEART</h3>
+        <div className="menu-category">
+          <p>MENU CATEGORY</p>
+          <div className="radio-btn">
+            {['All', 'Bread', 'Coffee', 'Tea'].map(cat => (
+              <label key={cat}>
+                <input
+                  type="radio"
+                  name="category"
+                  value={cat}
+                  checked={filters.category === cat}
+                  onChange={handleCategory}
+                /> {cat}
+              </label>
+            ))}
           </div>
         </div>
+
+        <div className="menu-sorting">
+          <p>Sort</p>
+          <select value={filters.sortBy} onChange={handleSort}>
+            <option value="newest">Newest</option>
+            <option value="alphabetically">Name: A-Z</option>
+            <option value="low_to_high">Price: Low - High</option>
+            <option value="high_to_low">Price: High - Low</option>
+          </select>
+
+          <p>Price Range</p>
+          <div className="filter-row">
+            <span className="price-label">₱{filters.minPrice}</span>
+
+            <div className="range-slider-container">
+              <input
+                type="range" min="0" max="1000"
+                value={filters.minPrice}
+                onChange={handleMinPrice}
+              />
+              <input
+                type="range" min="0" max="1000"
+                value={filters.maxPrice}
+                onChange={handleMaxPrice}
+              />
+            </div>
+
+            <span className="price-label">₱{filters.maxPrice}</span>
+          </div>
+        </div>
+
       </div>
-    </>
-  )
+    </div>
+  );
 }

@@ -36,16 +36,17 @@
 }
 
 .product-profile img {
-  width: 100%;
+  width: 270px;
+  height: 250px;
   border-radius: 10px;
   border: 2px solid var(--cream);
+  object-fit: cover;
 }
 
 .product-sidebar h3 {
   text-align: center;
   font-size: 1.3em;
   color: var(--components);
-  /* text-shadow: 0 5px 5px rgba(0, 0, 0, 0.58); */
   margin: 16px;
 }
 
@@ -118,4 +119,11 @@
   padding: 5px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-weight: bold;
+}
+
+.price {
+  text-align: right;
+  margin-right: 15px;
+  font-size: 1.3em;
+  color: var(--components);
 }
