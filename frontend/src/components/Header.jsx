@@ -1,5 +1,5 @@
 import "./Header.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from 'axios';
 import { Checkout } from "./HomeComponents/Checkout";
 import { AllOrders } from "./HomeComponents/AllOrders";
@@ -16,6 +16,7 @@ export function Header() {
   const [viewAllOrders, setViewAllOrders] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
+  const fileInputRef = useRef(null);
 
   const currentUserId = localStorage.getItem("currentUserId");
 
@@ -24,6 +25,24 @@ export function Header() {
   const handleViewingOrders = () => setViewAllOrders(!viewAllOrders);
   const openCartSideBar = () => setIsCartOpen(!isCartOpen);
   const openSidebar = () => setIsProfileOpen(!isProfileOpen);
+
+  const handleProfilePictureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("user_id", currentUserId);
+
+    try {
+      const res = await axios.post("http://127.0.0.1:5000/upload_pfp", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setUserData((prev) => ({ ...prev, profile_picture: `${res.data.profile_picture}?t=${Date.now()}` }));
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
 
   const handleLogout = () => {
     disconnectSocket(currentUserId);
@@ -148,7 +167,7 @@ export function Header() {
             {/* Basket Trigger */}
             <div className="menu" onClick={openCartSideBar}>
               <div className="total-cart-item">{cartItems.length}</div>
-              <button className="menu-button"><img src="./public/cart-icon.png" alt="" /></button>
+              <button className="menu-button" id="cart-icon"><img src="./public/cart-icon.png" alt="" /></button>
               <p>Basket</p>
             </div>
 
@@ -232,8 +251,21 @@ export function Header() {
                 <button className="hide-profile-btn" onClick={openSidebar}><img src="./public/hide-button.png" alt="" /></button>
               </div>
               <div className="profile-image-container">
-                <img className="profile-img" src={userData?.profile_picture || "/default-pfp.png"} alt="" />
-                <button><img className="add-icon" src="./public/add-icon.png" alt="" /></button>
+                <img
+                  className="profile-img"
+                  src={userData?.profile_picture ? `${userData.profile_picture.split('?')[0]}?t=${userData.profile_picture.split('?')[1] || 'init'}` : "/default-pfp.png"}
+                  alt=""
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleProfilePictureUpload}
+                />
+                <button onClick={() => fileInputRef.current.click()}>
+                  <img className="add-icon" src="./public/add-icon.png" alt="" />
+                </button>
                 <p>{userData ? `@${userData.first_name} ${userData.last_name}` : "Guest"}</p>
               </div>
               <p className="personal-info-text">PERSONAL INFORMATION</p>

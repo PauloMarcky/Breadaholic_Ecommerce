@@ -62,6 +62,7 @@
   transition: box-shadow 0.2s, transform 0.2s;
   box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.58);
   border: 1px solid var(--cream);
+  padding: 5px;
 }
 
 .product-img {
@@ -77,6 +78,11 @@
   align-items: center;
   justify-content: center;
   font-size: 20px;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: var(--cream);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
 .product-placeholder img {
@@ -86,6 +92,7 @@
   align-items: center;
   justify-content: center;
   font-size: 20px;
+  border-radius: 10px;
 }
 
 .product-footer {
@@ -97,6 +104,8 @@
   border-top: 1px solid var(--border);
   box-shadow: inset 0 0px 10px rgba(0, 0, 0, 0.58);
   border: 0px solid var(--components);
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 .btn-add {
@@ -131,4 +140,49 @@
   color: var(--cream);
   background: var(--btn);
   border: 0px solid var(--components);
+}
+
+/* The flying clone image */
+.flying-item {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+  pointer-events: none;
+  /* so it doesn't block clicks */
+  z-index: 9999;
+  opacity: 1;
+
+  /* Start position */
+  left: var(--start-x);
+  top: var(--start-y);
+
+  transition: none;
+}
+
+/* Trigger the animation */
+.flying-item.fly {
+  animation: flyToCart 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes flyToCart {
+  0% {
+    left: var(--start-x);
+    top: var(--start-y);
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    left: var(--end-x);
+    top: var(--end-y);
+    transform: scale(0.1);
+    /* shrinks as it reaches the cart */
+    opacity: 0;
+  }
 }

@@ -32,14 +32,19 @@ export function Album() {
         <div className="albums-container">
           <div className="albums-track" ref={scrollRef}>
             <div className="album-thumb">
+              <img src="/Albums/album1.jpg" alt="" />
             </div>
             <div className="album-thumb">
+              <img src="/Albums/album2.jpg" alt="" />
             </div>
             <div className="album-thumb">
+              <img src="/Albums/album3.jpg" alt="" />
             </div>
             <div className="album-thumb">
+              <img src="/Albums/album4.jpg" alt="" />
             </div>
             <div className="album-thumb">
+              <img src="/Albums/album5.jpg" alt="" />
             </div>
           </div>
         </div>

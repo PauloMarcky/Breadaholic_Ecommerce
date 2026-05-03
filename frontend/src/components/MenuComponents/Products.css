@@ -96,3 +96,48 @@
   opacity: 1;
   visibility: visible;
 }
+
+/* The flying clone image */
+.flying-item {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+  pointer-events: none;
+  /* so it doesn't block clicks */
+  z-index: 9999;
+  opacity: 1;
+
+  /* Start position */
+  left: var(--start-x);
+  top: var(--start-y);
+
+  transition: none;
+}
+
+/* Trigger the animation */
+.flying-item.fly {
+  animation: flyToCart 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes flyToCart {
+  0% {
+    left: var(--start-x);
+    top: var(--start-y);
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    left: var(--end-x);
+    top: var(--end-y);
+    transform: scale(0.1);
+    /* shrinks as it reaches the cart */
+    opacity: 0;
+  }
+}

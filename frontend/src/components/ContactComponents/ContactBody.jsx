@@ -1,4 +1,5 @@
 import './ContactBody.css';
+import { Link } from 'react-router-dom';
 
 export function ContactBody() {
   return (
@@ -22,15 +23,19 @@ export function ContactBody() {
                 <img src="./public/tele.png" alt="" />
                 <p>Phone Number</p>
               </div>
-              <p className="value">12345678910</p>
+              <p className="value">
+                0918 311 8513</p>
             </div>
           </div>
           <hr />
           <p className="follow-mess">FOLLOW OUR PAGE</p>
           <div className="contact-img">
-            <img src="./public/fb.png" alt="" />
-            <img src="./public/ig.png" alt="" />
-            <img src="./public/mess.png" alt="" />
+            <Link to={`https://www.facebook.com/Breadaholic04`}
+              target='blank'><img src="./public/fb.png" alt="" /></Link>
+            <Link to={`https://www.instagram.com/breadaholic04`}
+              target='blank'><img src="./public/ig.png" alt="" /></Link>
+            <Link to={`https://www.facebook.com/messages/t/108963074220045`}
+              target='blank'><img src="./public/mess.png" alt="" /></Link>
           </div>
         </div>
         <div className="contact-right">

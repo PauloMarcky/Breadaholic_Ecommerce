@@ -1,7 +1,10 @@
+from flask import send_from_directory
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from mysql.connector import pooling
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 # Change this to a secure random key
@@ -567,6 +570,52 @@ def get_feedbacks():
 
     except Exception as e:
         print(f"Error fetching feedbacks: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+UPLOAD_FOLDER = os.path.join("public", "pfp's")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+@app.route("/pfp's/<filename>")
+def serve_pfp(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+# Replace your entire upload_pfp route with this:
+
+
+@app.route("/upload_pfp", methods=["POST"])
+def upload_pfp():
+    conn = None
+    try:
+        user_id = request.form.get("user_id")
+        file = request.files.get("file")
+
+        if not file or not user_id:
+            return jsonify({"error": "Missing file or user_id"}), 400
+
+        ext = os.path.splitext(secure_filename(file.filename))[1]
+        filename = f"user_{user_id}{ext}"
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(save_path)
+
+        db_path = f"http://127.0.0.1:5000/pfp's/{filename}"
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE Users SET profile_picture = %s WHERE user_id = %s",
+            (db_path, user_id)
+        )
+        conn.commit()
+        cursor.close()
+
+        return jsonify({"profile_picture": db_path}), 200
+
+    except Exception as e:
+        print(f"Upload error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:

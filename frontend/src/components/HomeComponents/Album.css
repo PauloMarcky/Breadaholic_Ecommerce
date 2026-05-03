@@ -80,6 +80,11 @@
   overflow-x: auto;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+}
+
+.albums-track img {
+  border-radius: 10px;
 }
 
 .albums-track::-webkit-scrollbar {
@@ -94,8 +99,10 @@
   flex-shrink: 0;
   width: 250px;
   height: 350px;
-  background-color: #ddd;
+  background-color: var(--cream);
   border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .album-thumb img {
