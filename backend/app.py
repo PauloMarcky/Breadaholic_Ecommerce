@@ -309,6 +309,7 @@ def view_cart(user_id):
                 p.product_name,
                 p.price,
                 p.image,
+                p.stock,
                 c.quantity,
                 (p.price * c.quantity) AS subtotal
             FROM cart_item c
@@ -533,7 +534,6 @@ def add_feedback():
         columns = [col[0] for col in cursor.description]
         new_review = dict(zip(columns, cursor.fetchone()))
 
-        # ✅ No broadcast=True — socketio.emit() from a route already goes to ALL clients
         socketio.emit('new_feedback_received', new_review)
 
         return jsonify({"status": "success"}), 201

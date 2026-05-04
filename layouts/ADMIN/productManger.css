@@ -1,0 +1,229 @@
+:root {
+  --background: #e8e0c8;
+  --left-background: #B07A3B;
+  --right-background: #CE9A56;
+  --light-background: #B5814B;
+  --components: #5D4122;
+  --btn: #835126;
+  --btn-hover: #835126b5;
+  --text-dark: #3E1A00;
+  --text-light: #e8e0c8;
+  --text-sub-light: #D2A26A;
+  --brown-dark: #6B3800;
+  --brown-light: #A85C00;
+  --cream: #e0d6b8;
+  --white: #ffffff;
+  --star: #F0B429;
+}
+
+body,
+html {
+  margin: 0px;
+  padding: 0px;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--background);
+  display: flex;
+}
+
+.side-bar {
+  width: 350px;
+  height: 100vh;
+  background-color: var(--right-background);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.logo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 50px;
+  margin-bottom: 50px;
+}
+
+.logo img {
+  width: 70%;
+  height: 100px;
+}
+
+.product {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: var(--text-dark);
+  padding: 10px 30px;
+  box-sizing: border-box;
+}
+
+.product:hover {
+  background-color: #cea26a;
+  cursor: pointer;
+}
+
+.product img {
+  width: 10%;
+}
+
+.order {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: var(--text-dark);
+  padding: 10px 30px;
+  box-sizing: border-box;
+}
+
+.order:hover {
+  background-color: #cea26a;
+  cursor: pointer;
+}
+
+.order img {
+  width: 10%;
+}
+
+.sales {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: var(--text-dark);
+  padding: 10px 30px;
+  box-sizing: border-box;
+}
+
+.sales:hover {
+  background-color: #cea26a;
+  cursor: pointer;
+}
+
+.sales img {
+  width: 10%;
+}
+
+.user {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: var(--text-dark);
+  padding: 10px 30px;
+  box-sizing: border-box;
+}
+
+.user:hover {
+  background-color: #cea26a;
+  cursor: pointer;
+}
+
+.user img {
+  width: 10%;
+}
+
+.log-out {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: var(--text-dark);
+  padding: 10px 30px;
+  box-sizing: border-box;
+}
+
+.log-out:hover {
+  background-color: #cea26a;
+  cursor: pointer;
+}
+
+.log-out img {
+  width: 10%;
+}
+
+
+.footer-admin {
+  background-color: var(--components);
+  font-size: .6em;
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.footer-admin p {
+  color: var(--text-light);
+  margin: 2px 0px;
+  letter-spacing: .5px;
+  font-weight: bold;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* PRODUCT MANAGER */
+
+.main {
+  left: 350px;
+  position: fixed;
+  padding: 30px;
+  box-sizing: border-box;
+  width: calc(100% - 350px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  row-gap: 15px;
+}
+
+.header {
+  background-color: #f0b42972;
+  padding: 0px 50px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-dark);
+  letter-spacing: 1px;
+  font-size: 1.2em;
+  border: 1.5px solid var(--text-dark);
+}
+
+
+.feature-data {
+  display: flex;
+  width: 100%;
+  column-gap: 30px;
+  justify-content: center;
+  align-items: center;
+}
+
+.feat {
+  width: 30%;
+  background-color: #f0b42972;
+  height: 100px;
+  border-radius: 10px;
+  border: 2px solid white;
+}
+
+.data-container {}
+
+.column {}
+
+.row-wrapper {}
+
+.row {}
+
+.button-container {}

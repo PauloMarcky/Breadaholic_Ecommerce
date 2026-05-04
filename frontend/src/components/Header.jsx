@@ -123,10 +123,9 @@ export function Header() {
       await axios.post(`http://127.0.0.1:5000${endpoint}`, {
         user_id: currentUserId,
         product_id: productId,
-        quantity: 1 // Only used by add_to_cart route
+        quantity: 1
       });
-      // The Socket listener you set up earlier will automatically 
-      // call fetchCart() when the server emits 'cart_updated'
+
     } catch (err) {
       console.error("Failed to update quantity:", err);
     }
@@ -192,21 +191,22 @@ export function Header() {
                         onChange={() => toggleItemSelection(item.ordItem_id)}
                       />
                       <div className="item-display">
-                        <img src={item.image || "./src/assets/cart-item.jpg"} alt={item.product_name} />
+                        <img src={item.image} alt={item.product_name} />
                         <div className="item-infos">
                           <h5>{item.product_name}</h5>
-                          <p>Qty: {item.quantity}</p>
+                          <p>Stocks: {item.stock}</p>
                           <h4>{item.price} Pesos</h4>
                         </div>
 
                         <button
                           className="btn-adding"
                           onClick={() => handleQuantityChange(item.product_id, 'add')}
+                          disabled={item.quantity >= item.stock}
                         >
                           +
                         </button>
 
-                        <input type="number" min="1" value={item.quantity} readOnly />
+                        <input type="number" min="1" max={item.stock} value={item.quantity} readOnly />
 
                         <button
                           className="btn-deducting"
@@ -290,7 +290,7 @@ export function Header() {
             </div>
           </div>
         </nav>
-      </header>
+      </header >
     </>
   );
 }
