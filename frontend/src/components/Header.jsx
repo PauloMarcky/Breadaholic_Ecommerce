@@ -17,6 +17,7 @@ export function Header() {
   const [cartItems, setCartItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const fileInputRef = useRef(null);
+  const [isConfirmed, setIsConfirmed] = useState(false)
 
   const currentUserId = localStorage.getItem("currentUserId");
 
@@ -25,6 +26,7 @@ export function Header() {
   const handleViewingOrders = () => setViewAllOrders(!viewAllOrders);
   const openCartSideBar = () => setIsCartOpen(!isCartOpen);
   const openSidebar = () => setIsProfileOpen(!isProfileOpen);
+  const handleConfirmation = () => setIsConfirmed(!isConfirmed);
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
@@ -274,7 +276,17 @@ export function Header() {
                 <li><img className="info-img-container" src="./public/address.png" alt="" /><p>{userData ? `${userData.barangay} ${userData.street_name}` : "N/A"}</p></li>
                 <li><img className="info-img-container" src="./public/date-joined.png" alt="" /><p>{userData?.date_joined ? new Date(userData.date_joined).toLocaleDateString() : "N/A"}</p></li>
               </ul>
-              <button className="logout-btn" onClick={handleLogout}>LOG OUT <img src="./public/logout-icon.png" alt="" /></button>
+              <div className={`confirmation-overlay ${isConfirmed && 'visible'}`} ></div>
+              {isConfirmed &&
+                <div className="confirmation">
+                  <p>Are you sure you want to LOG OUT?</p>
+                  <div className="confirm-btns">
+                    <button className="proceed" onClick={handleLogout}>CONFIRM</button>
+                    <button className="cancel-log" onClick={handleConfirmation}>CANCEL</button>
+                  </div>
+                </div>
+              }
+              <button className="logout-btn" onClick={handleConfirmation}>LOG OUT <img src="./public/logout-icon.png" alt="" /></button>
             </div>
           </div>
         </nav>
