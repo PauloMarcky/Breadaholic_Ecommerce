@@ -11,11 +11,9 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const [streetInput, setStreetInput] = useState("");
   const [landmarkInput, setLandmarkInput] = useState("");
-
-
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirmOrder = async () => {
-    // Basic Validation: Don't let them order without an address
     if (!selectedBarangay || !streetInput) {
       alert("Please provide a Barangay and Street name!");
       return;
@@ -23,7 +21,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
 
     const orderData = {
       user_id: localStorage.getItem("currentUserId"),
-      items: itemsToBuy, // Passed as prop from Header
+      items: itemsToBuy,
       total_price: itemsToBuy.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 50,
       address: {
         barangay: selectedBarangay.value,
@@ -32,17 +30,24 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
       }
     };
 
-    console.log("Sending Order Data:", orderData);
+    setIsLoading(true);
 
     try {
       const res = await axios.post("http://127.0.0.1:5000/confirm_order", orderData);
       console.log("Server says:", res.data);
-      alert("Order Placed Successfully!");
+
+      // ── Close checkout FIRST, then show success ──
       setSelectedItems([]);
       onCancel();
+      alert("Order Placed Successfully!");
+
     } catch (err) {
       console.error(err);
-      alert("Error placing order.");
+      // Show the actual server error message instead of a generic one
+      const serverMessage = err.response?.data?.error;
+      alert(serverMessage || "Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -60,6 +65,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
     { value: "Victory Sur", label: "Victory Sur" },
     { value: "Villasis", label: "Villasis" },
   ];
+
   return (
     <>
       <div className="checkout-container">
@@ -107,8 +113,14 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
           </div>
         </div>
         <div className="below-btn">
-          <button className="confirm" onClick={() => handleConfirmOrder()}>CONFIRM ORDER</button>
-          <button className="cancel" onClick={onCancel}>CANCEL</button>
+          <button
+            className="confirm"
+            onClick={handleConfirmOrder}
+            disabled={isLoading}
+          >
+            {isLoading ? "PLACING ORDER..." : "CONFIRM ORDER"}
+          </button>
+          <button className="cancel" onClick={onCancel} disabled={isLoading}>CANCEL</button>
         </div>
       </div>
     </>

@@ -190,7 +190,7 @@ body {
 }
 
 .header {
-  background-color: #f0b42972;
+  background-color: var(--right-background);
   padding: 0px 50px;
   border-radius: 10px;
   box-sizing: border-box;
@@ -212,18 +212,16 @@ body {
 
 .feat {
   width: 30%;
-  background-color: #f0b42972;
-  height: 100px;
+  background-color: var(--components);
+  height: 120px;
   border-radius: 10px;
-  border: 2px solid white;
 }
 
-.data-container {}
+.data-container {
+  height: 100%;
+  width: 100%;
+}
 
-.column {}
-
-.row-wrapper {}
-
-.row {}
-
-.button-container {}
+.header {
+  background-color: var(--right-background);
+}

@@ -137,12 +137,14 @@ export function Header() {
         user_id: currentUserId,
         ordItem_id: ordItemId
       });
-      // The socket listener handles the refresh automatically!
     } catch (err) {
       console.error("Remove Error:", err);
     }
   };
 
+  const validSelectedIds = selectedItems.filter(id =>
+    cartItems.some(item => item.ordItem_id === id)
+  );
   return (
     <>
 
@@ -165,14 +167,13 @@ export function Header() {
               <button className="search-button"><img src="./public/search-icon.png" alt="" /></button>
             </div>
 
-            {/* Basket Trigger */}
             <div className="menu" onClick={openCartSideBar}>
               <div className="total-cart-item">{cartItems.length}</div>
               <button className="menu-button" id="cart-icon"><img src="./public/cart-icon.png" alt="" /></button>
               <p>Basket</p>
             </div>
 
-            {/* --- CART SIDEBAR --- */}
+            {/* CART SIDEBAR */}
             <div className={`sidebar-overlay ${isCartOpen && 'visible'}`} onClick={openCartSideBar}></div>
             <div className={`cart-container ${isCartOpen ? 'active' : ''}`}>
               <div className="title-exit-btn">
@@ -227,8 +228,11 @@ export function Header() {
               </div>
 
               <div className="buttons-place">
-                <button className="checkout" onClick={handleCheckout} disabled={selectedItems.length === 0}
-                >CHECKOUT ({selectedItems.length})</button>
+                <button
+                  className="checkout"
+                  onClick={handleCheckout}
+                  disabled={validSelectedIds.length === 0}
+                >CHECKOUT ({validSelectedIds.length})</button>
                 <div className={`sidebar-overlay ${proceedCheckout && 'visible'}`}></div>
                 {proceedCheckout && <Checkout onCancel={handleCheckout}
                   itemsToBuy={cartItems.filter(item => selectedItems.includes(item.ordItem_id))}
