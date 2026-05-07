@@ -1,0 +1,210 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f3c56b;
+}
+
+/* Layout */
+.om-layout {
+  display: flex;
+}
+
+/* Sidebar */
+.om-sidebar {
+  width: 220px;
+  background: #d9a441;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.om-brand {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.om-sidebar ul {
+  list-style: none;
+}
+
+.om-sidebar li {
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.om-active {
+  font-weight: bold;
+}
+
+.om-exit {
+  margin-top: 40px;
+}
+
+/* Main Content */
+.om-content {
+  flex: 1;
+  padding: 20px;
+  background: #b86d1c;
+}
+
+.om-header {
+  background: #e5a937;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Stats */
+.om-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.om-box {
+  flex: 1;
+  background: #f4c26b;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.om-box p {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* Table */
+.om-table-wrap {
+  background: #f4c26b;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.om-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.om-table th,
+.om-table td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Status Colors */
+.om-done {
+  color: green;
+}
+
+.om-cancel {
+  color: red;
+}
+
+.om-pending {
+  color: black;
+}
+
+/* Buttons */
+.om-view {
+  background: #e5a937;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.om-trash {
+  background: none;
+  border: none;
+  color: red;
+  cursor: pointer;
+}
+
+/* Order Detail Panel */
+.od-panel {
+  width: 300px;
+  background: #f4c26b;
+  padding: 15px;
+  border-left: 4px solid #b86d1c;
+}
+
+.od-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.od-id {
+  background: #fff;
+  padding: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+  border-radius: 5px;
+}
+
+/* Items */
+.od-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.od-item img {
+  border-radius: 5px;
+}
+
+/* Summary */
+.od-summary {
+  margin-top: 10px;
+}
+
+.od-grand {
+  margin-top: 5px;
+  background: #b86d1c;
+  color: white;
+  padding: 5px;
+  text-align: center;
+  border-radius: 5px;
+}
+
+/* Actions */
+.od-actions {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-prep {
+  background: orange;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.od-done {
+  background: green;
+  color: white;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.od-cancel {
+  background: red;
+  color: white;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}

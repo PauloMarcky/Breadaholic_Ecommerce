@@ -164,7 +164,8 @@ def logInAuthentication():
                 return jsonify({
                     "message": "Log In Successful",
                     "user_id": user['user_id'],
-                    "first_name": user['first_name']
+                    "first_name": user['first_name'],
+                    "role": user['role']
                 }), 200
             else:
                 return jsonify({"error": "Incorrect password"}), 401

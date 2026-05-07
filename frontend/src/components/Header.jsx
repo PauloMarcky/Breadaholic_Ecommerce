@@ -149,7 +149,7 @@ export function Header() {
     <>
 
       <header className="nav-wrapper">
-        <nav>
+        <nav className="header-nav">
           <div className="logo-header-container">
             <img src="./public/business-logo.png" alt="Logo" />
           </div>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sales Reports</title>
+  <link rel="stylesheet" href="salesReport.css">
+</head>
+
+<body>
+
+  <div class="sr-layout">
+
+    <!-- Sidebar -->
+    <aside class="sr-sidebar">
+      <h2 class="sr-logo">Breadaholic</h2>
+      <ul>
+        <li>Product Management</li>
+        <li>Order Manager</li>
+        <li class="sr-active">Sales Reports</li>
+        <li>Users</li>
+        <li class="sr-logout">Log Out</li>
+      </ul>
+    </aside>
+
+    <!-- Main -->
+    <main class="sr-main">
+
+      <!-- Header -->
+      <div class="sr-header">
+        <h1>Sales Reports</h1>
+      </div>
+
+      <!-- Cards -->
+      <section class="sr-cards">
+
+        <div class="sr-card">
+          <h4>Sales</h4>
+          <p class="sr-big">3469</p>
+          <span>Today's Revenue</span>
+        </div>
+
+        <div class="sr-card">
+          <h4>Review</h4>
+          <p class="sr-big">4.9</p>
+          <span>Average Ratings</span>
+        </div>
+
+        <div class="sr-card">
+          <h4>Best Product</h4>
+          <p class="sr-text">SPANISH BREAD</p>
+          <span>Top Seller</span>
+        </div>
+
+      </section>
+
+      <!-- Chart 1 -->
+      <section class="sr-chart-block">
+
+        <div class="sr-chart-header">
+          <h3>Total Revenue</h3>
+          <select>
+            <option>Monthly</option>
+            <option>Weekly</option>
+          </select>
+        </div>
+
+        <div class="sr-chart-area">
+          <!-- Fake line graph -->
+          <div class="sr-line sr-line-a"></div>
+          <div class="sr-line sr-line-b"></div>
+
+          <div class="sr-xlabels">
+            <span>Jan</span>
+            <span>Feb</span>
+            <span>March</span>
+            <span>April</span>
+            <span>May</span>
+            <span>June</span>
+            <span>July</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Chart 2 -->
+      <section class="sr-chart-block">
+
+        <div class="sr-chart-header">
+          <h3>Product Sales</h3>
+          <select>
+            <option>Annually</option>
+            <option>Monthly</option>
+          </select>
+        </div>
+
+        <div class="sr-bar-area">
+          <div class="sr-bar" style="height: 70%"></div>
+          <div class="sr-bar" style="height: 80%"></div>
+          <div class="sr-bar" style="height: 90%"></div>
+          <div class="sr-bar" style="height: 85%"></div>
+          <div class="sr-bar" style="height: 75%"></div>
+        </div>
+
+        <div class="sr-xlabels">
+          <span>Product A</span>
+          <span>Product B</span>
+          <span>Product C</span>
+          <span>Product D</span>
+          <span>Product E</span>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+</body>
+
+</html>

@@ -1,0 +1,152 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f3c56b;
+}
+
+/* Layout */
+.sr-layout {
+  display: flex;
+}
+
+/* Sidebar */
+.sr-sidebar {
+  width: 220px;
+  background: #d9a441;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.sr-logo {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.sr-sidebar ul {
+  list-style: none;
+}
+
+.sr-sidebar li {
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.sr-active {
+  font-weight: bold;
+}
+
+.sr-logout {
+  margin-top: 40px;
+}
+
+/* Main */
+.sr-main {
+  flex: 1;
+  padding: 20px;
+  background: #b86d1c;
+}
+
+/* Header */
+.sr-header {
+  background: #e5a937;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Cards */
+.sr-cards {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.sr-card {
+  flex: 1;
+  background: #f4c26b;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.sr-big {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.sr-text {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Chart Blocks */
+.sr-chart-block {
+  background: #f4c26b;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+/* Chart Header */
+.sr-chart-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* Line Chart (fake) */
+.sr-chart-area {
+  height: 250px;
+  background: #d8c2a8;
+  position: relative;
+  border-radius: 8px;
+}
+
+.sr-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+}
+
+.sr-line-a {
+  top: 60%;
+  background: #aaa;
+  transform: rotate(-10deg);
+}
+
+.sr-line-b {
+  top: 40%;
+  background: #eee;
+  transform: rotate(15deg);
+}
+
+/* Bar Chart */
+.sr-bar-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+  height: 250px;
+  background: #d8c2a8;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.sr-bar {
+  flex: 1;
+  background: #999;
+  border-radius: 4px;
+}
+
+/* Labels */
+.sr-xlabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+}

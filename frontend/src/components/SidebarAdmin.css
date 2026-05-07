@@ -1,0 +1,105 @@
+.sb {
+  width: 240px;
+  min-width: 240px;
+  background: var(--sb);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── Header ── */
+.sb-header {
+  padding: 28px 22px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sb-title {
+  font-family: 'Playfair Display', serif;
+  color: #F0C060;
+  font-size: 21px;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+.sb-subtitle {
+  color: rgba(240, 192, 96, 0.4);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* ── Nav ── */
+.sb-nav {
+  flex: 1;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: all 0.15s;
+  background: transparent;
+  color: rgba(240, 200, 140, 0.55);
+  border: 1px solid transparent;
+  text-decoration: none;
+  /* Added for NavLink */
+}
+
+.sb-nav-item:hover {
+  background: var(--sb-hover);
+  color: rgba(240, 200, 140, 0.8);
+}
+
+.sb-active {
+  background: var(--sb-active);
+  color: #F0C060;
+  border-color: rgba(240, 192, 96, 0.2);
+}
+
+.sb-nav-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* ── Footer ── */
+.sb-footer {
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sb-logout {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 130, 90, 0.65);
+  transition: all 0.15s;
+}
+
+.sb-logout:hover {
+  background: rgba(255, 130, 90, 0.08);
+  color: rgba(255, 130, 90, 0.9);
+}
+
+.sb-credits {
+  padding: 8px 14px;
+  font-size: 9.5px;
+  color: rgba(200, 160, 100, 0.35);
+  letter-spacing: 0.4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}

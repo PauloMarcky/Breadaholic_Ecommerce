@@ -118,11 +118,14 @@ export function Registration() {
         localStorage.setItem("currentUserId", data.user_id);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userName', data.first_name);
+        localStorage.setItem('userRole', data.role);
         sessionStorage.setItem('justLoggedIn', 'true');
-        navigate("/home");
-      }
-      else {
-        setLoginError(data.error || "Invalid login credentials");
+
+        if (data.role === 'admin') {
+          navigate("/product_manager");
+        } else {
+          navigate("/home");
+        }
       }
 
     } catch (error) {

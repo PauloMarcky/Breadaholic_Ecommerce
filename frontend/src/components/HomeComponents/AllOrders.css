@@ -13,7 +13,7 @@
 .all-order-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   background-color: var(--brown-light);
   border-radius: 10px 10px 0px 0px;
   box-shadow:
@@ -24,6 +24,11 @@
 .all-order-header img {
   width: 40px;
   padding: 5px;
+}
+
+.all-order-header h2 {
+  color: var(--cream);
+  margin-left: 10px;
 }
 
 .orders {

@@ -22,7 +22,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
     const orderData = {
       user_id: localStorage.getItem("currentUserId"),
       items: itemsToBuy,
-      total_price: itemsToBuy.reduce((acc, item) => acc + (item.price * item.quantity), 0) + 50,
+      total_price: itemsToBuy.reduce((acc, item) => acc + (item.price * item.quantity), 0),
       address: {
         barangay: selectedBarangay.value,
         street: streetInput,

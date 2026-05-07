@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Order Management</title>
+  <link rel="stylesheet" href="orderManager.css">
+</head>
+
+<body>
+
+  <div class="om-layout">
+
+    <!-- Sidebar -->
+    <nav class="om-sidebar">
+      <h2 class="om-brand">Breadaholic</h2>
+      <ul>
+        <li>Product Management</li>
+        <li class="om-active">Order Manager</li>
+        <li>Sales Reports</li>
+        <li>Users</li>
+        <li class="om-exit">Log Out</li>
+      </ul>
+    </nav>
+
+    <!-- Main -->
+    <section class="om-content">
+
+      <div class="om-header">
+        <h1>Order Management</h1>
+      </div>
+
+      <!-- Stats -->
+      <div class="om-stats">
+        <div class="om-box">
+          <h4>Pending Orders</h4>
+          <p>4</p>
+          <span>Pending</span>
+        </div>
+
+        <div class="om-box">
+          <h4>Preparing Orders</h4>
+          <p>2</p>
+          <span>Preparing</span>
+        </div>
+
+        <div class="om-box">
+          <h4>Today's Order</h4>
+          <p>15</p>
+          <span>Completed Today</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="om-table-wrap">
+        <table class="om-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Name</th>
+              <th>Date Ordered</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>001</td>
+              <td>Escanor Noli Nis</td>
+              <td>24-May-2026</td>
+              <td class="om-done">COMPLETED</td>
+              <td>
+                <button class="om-view">View Orders</button>
+                <button class="om-trash">🗑️</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>002</td>
+              <td>Lelouch vi Brita</td>
+              <td>24-May-2026</td>
+              <td class="om-cancel">CANCELED</td>
+              <td>
+                <button class="om-view">View Orders</button>
+                <button class="om-trash">🗑️</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>003</td>
+              <td>Juan Dela Cruz</td>
+              <td>24-May-2026</td>
+              <td class="om-pending">PENDING</td>
+              <td>
+                <button class="om-view">View Orders</button>
+                <button class="om-trash">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- Right Panel (Order Details) -->
+    <aside class="od-panel">
+
+      <div class="od-header">
+        <h2>Order Detail</h2>
+        <span class="od-close">✕</span>
+      </div>
+
+      <div class="od-id">002</div>
+
+      <!-- Items -->
+      <div class="od-item">
+        <img src="https://via.placeholder.com/60">
+        <span>₱150</span>
+      </div>
+
+      <div class="od-item">
+        <img src="https://via.placeholder.com/60">
+        <span>₱150</span>
+      </div>
+
+      <div class="od-item">
+        <img src="https://via.placeholder.com/60">
+        <span>₱150</span>
+      </div>
+
+      <!-- Totals -->
+      <div class="od-summary">
+        <p>Order Total: ₱450</p>
+        <p>Shipping Fee: ₱50</p>
+        <div class="od-grand">Total: ₱500</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="od-actions">
+        <button class="od-prep">Preparing</button>
+        <button class="od-done">Completed</button>
+        <button class="od-cancel">Confirm Cancelation</button>
+      </div>
+
+    </aside>
+
+  </div>
+
+</body>
+
+</html>

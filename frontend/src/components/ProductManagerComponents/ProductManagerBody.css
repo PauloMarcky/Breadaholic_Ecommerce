@@ -1,0 +1,241 @@
+/* Shared UI */
+.pm-page-header {
+  background: linear-gradient(135deg, var(--amber), var(--amber-lt));
+  color: #fff;
+  padding: 16px 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(192, 122, 26, 0.35);
+}
+
+.pm-page-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pm-stat-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  flex: 1;
+}
+
+.pm-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  margin-bottom: 6px;
+}
+
+.pm-stat-value {
+  font-weight: 700;
+  font-family: 'Playfair Display', serif;
+  line-height: 1.1;
+}
+
+.pm-stat-value.long {
+  font-size: 22px;
+}
+
+.pm-stat-value.short {
+  font-size: 36px;
+}
+
+.pm-stat-value.default-color {
+  color: var(--brown);
+}
+
+.pm-stat-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pm-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: opacity .15s;
+}
+
+.pm-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pm-btn-primary {
+  background: var(--amber);
+  color: #fff;
+}
+
+.pm-btn-secondary {
+  background: var(--cream);
+  color: var(--brown);
+}
+
+.pm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 5, 0, .65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pm-modal-content {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px;
+  width: 480px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+}
+
+.pm-modal-content h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: var(--brown);
+  margin-bottom: 22px;
+}
+
+.pm-modal-body {
+  display: flex;
+  gap: 20px;
+}
+
+.pm-modal-preview {
+  width: 110px;
+  height: 110px;
+  min-width: 110px;
+  background: var(--cream);
+  border-radius: 10px;
+  border: 2px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.pm-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  flex: 1;
+}
+
+.pm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pm-form-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.pm-form-input,
+.pm-form-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--brown);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.pm-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pm-modal-actions .pm-btn {
+  flex: 1;
+}
+
+/* Product Specific */
+.product-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.table-wrapper {
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-header h3 {
+  font-size: 15px;
+  color: var(--brown);
+  font-family: 'Playfair Display', serif;
+}
+
+.product-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.stock-out {
+  color: #DC3545;
+  font-weight: 600;
+}
+
+.stock-low {
+  color: #FD7E14;
+  font-weight: 600;
+}
+
+.stock-ok {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+}
+
+.action-btn.delete {
+  color: #DC3545;
+}

@@ -39,8 +39,8 @@ export function AllOrders({ onCancel }) {
     <>
       <div className="all-order-container">
         <div className="all-order-header">
-          <img src="../public/hide-button.png" alt="Close" onClick={onCancel} style={{ cursor: 'pointer' }} />
           <h2>MY ORDERS</h2>
+          <img src="../public/hide-button.png" alt="Close" onClick={onCancel} style={{ cursor: 'pointer' }} />
         </div>
 
         <div className="all-orders-wrapper">

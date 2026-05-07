@@ -1,11 +1,13 @@
-import { Header } from '../components/Header';
-import { FeatureProduct } from '../components/HomeComponents/FeatureProduct';
-import { IntroHook } from '../components/HomeComponents/IntroHook';
-import { Album } from '../components/HomeComponents/Album';
-import { Review } from '../components/HomeComponents/Review';
-import { Footer } from '../components/Footer';
-import '../index.css';
-import React, { useEffect, useState } from 'react'; export function Home() {
+import { Header } from '../../components/Header';
+import { FeatureProduct } from '../../components/HomeComponents/FeatureProduct';
+import { IntroHook } from '../../components/HomeComponents/IntroHook';
+import { Album } from '../../components/HomeComponents/Album';
+import { Review } from '../../components/HomeComponents/Review';
+import { Footer } from '../../components/Footer';
+import '../../index.css';
+import React, { useEffect, useState } from 'react';
+
+export function Home() {
   // 1. Initialize state directly from storage. 
   // This function only runs ONCE when the component is born.
   const [welcomeMessage, setWelcomeMessage] = useState(() => {

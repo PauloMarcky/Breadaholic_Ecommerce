@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+}
+
+:root {
+  --sb: #1E0C00;
+  --sb-hover: #2E1503;
+  --sb-active: #3E1F08;
+  --amber: #C07A1A;
+  --amber-lt: #E8A83A;
+  --amber-dk: #8B5010;
+  --bg: #F5E4C0;
+  --card: #FFFBF2;
+  --cream: #F0E2C0;
+  --brown: #3A1800;
+  --brown-lt: #6B3800;
+  --text: #1A0900;
+  --muted: #7A5030;
+  --border: rgba(160, 100, 40, 0.18);
+  --shadow: 0 2px 14px rgba(80, 30, 0, 0.10);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(192, 122, 26, 0.3);
+  border-radius: 10px;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--amber) !important;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: rgba(192, 122, 26, 0.06);
+}
+
+td {
+  padding: 11px 14px;
+  font-size: 13.5px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: rgba(192, 122, 26, 0.04);
+}

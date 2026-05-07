@@ -3,101 +3,111 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>product manager</title>
+  <title>Production Management</title>
   <link rel="stylesheet" href="productManger.css">
 </head>
 
 <body>
-  <div class="side-bar">
-    <div class="logo"><img src="/images/business-logo.png" alt=""></div>
-    <div class="product">
-      <img src="/images/product-icon.png" alt="">
-      <h4>Product Management</h4>
-    </div>
-    <div class="order">
-      <img src="/images//order-icon.png" alt="">
-      <h4>Order Manager</h4>
-    </div>
-    <div class="sales">
-      <img src="/images/sales-report-icon.png" alt="">
-      <h4>Sales Reports</h4>
-    </div>
-    <div class="user">
-      <img src="/images/user-icon.png.png" alt="">
-      <h4>User Logs</h4>
-    </div>
-    <div class="log-out">
-      <img src="/images/log-out-icon.png" alt="">
-      <h4>Log Out</h4>
-    </div>
-    <div class="footer-admin">
-      <p>@IT ELECTIVE & ADVANCE DATABASE SYSTEM</p>
-    </div>
+
+  <div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2 class="logo">Breadaholic</h2>
+      <ul>
+        <li class="active">Product Management</li>
+        <li>Order Manager</li>
+        <li>Sales Reports</li>
+        <li>Users</li>
+        <li class="logout">Log Out</li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+
+      <header>
+        <h1>Production Management</h1>
+      </header>
+
+      <!-- Cards -->
+      <section class="cards">
+        <div class="card">
+          <h3>Out of Stock</h3>
+          <p class="big">4</p>
+          <span>Unavailable</span>
+        </div>
+
+        <div class="card">
+          <h3>Products</h3>
+          <p class="big">69</p>
+          <span>Total</span>
+        </div>
+
+        <div class="card">
+          <h3>Latest Products</h3>
+          <p class="big">6</p>
+          <span>Recent Added</span>
+        </div>
+      </section>
+
+      <!-- Table -->
+      <section class="table-section">
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Last Update</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><img src="https://via.placeholder.com/60"></td>
+              <td>Product A</td>
+              <td>₱150</td>
+              <td>10</td>
+              <td>30/6/25</td>
+              <td>
+                <button class="edit">✏️</button>
+                <button class="delete">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <button class="add-btn">Add New Product</button>
+      </section>
+
+    </main>
   </div>
 
-  <div class="main">
-    <div class="header">
-      <h3>PRODUCT MANAGEMENT</h3>
-    </div>
-    <div class="feature-data">
-      <div class="feat"></div>
-      <div class="feat"></div>
-      <div class="feat"></div>
-    </div>
-    <div class="data-container">
-      <table>
-        <tr class="header">
-          <th></th>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Stock</th>
-          <th>Last Update</th>
-          <th></th>
-          <th></th>
-        </tr>
-        <tr class="row-odd">
-          <td><img src="/images/cart-item.jpg" alt=""></td>
-          <td>Product A</td>
-          <td>150 Pesos</td>
-          <td>10</td>
-          <td>5/6/2026</td>
-          <td><img src="/images/edit-icon.png" alt=""></td>
-          <td><img src="/images/delete-icon.png" alt=""></td>
-        </tr>
-        <tr class="row-even">
-          <td><img src="/images/cart-item.jpg" alt=""></td>
-          <td>Product A</td>
-          <td>150 Pesos</td>
-          <td>10</td>
-          <td>5/6/2026</td>
-          <td><img src="" alt=""></td>
-          <td><img src="" alt=""></td>
-        </tr>
-        <tr class="row-odd">
-          <td><img src="/images/cart-item.jpg" alt=""></td>
-          <td>Product A</td>
-          <td>150 Pesos</td>
-          <td>10</td>
-          <td>5/6/2026</td>
-          <td><img src="" alt=""></td>
-          <td><img src="" alt=""></td>
-        </tr>
-        <tr class="row-even">
-          <td><img src="/images/cart-item.jpg" alt=""></td>
-          <td>Product A</td>
-          <td>150 Pesos</td>
-          <td>10</td>
-          <td>5/6/2026</td>
-          <td><img src="" alt=""></td>
-          <td><img src="" alt=""></td>
-        </tr>
-      </table>
-      <div class="button-container">
-        <button></button>
+  <!-- Modal (Add/Edit Product) -->
+  <div class="modal">
+    <div class="modal-content">
+      <div class="image-box">ADD IMAGE</div>
+
+      <div class="form">
+        <input type="text" placeholder="Product Name" value="Product A">
+        <input type="number" placeholder="Price" value="150">
+        <input type="number" placeholder="Stock" value="10">
+
+        <select>
+          <option>Pastries</option>
+          <option>Coffee</option>
+        </select>
+
+        <div class="modal-actions">
+          <button class="primary">Save</button>
+          <button class="secondary">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
+
 </body>
 
 </html>

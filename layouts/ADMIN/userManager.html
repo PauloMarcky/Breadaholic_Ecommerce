@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
+  <link rel="stylesheet" href="userManager.css">
+</head>
+
+<body>
+
+  <div class="us-container">
+
+    <!-- Sidebar -->
+    <aside class="us-sidebar">
+      <div class="us-logo">Breadaholic</div>
+
+      <nav class="us-menu">
+        <div class="us-menu-item">🛒 Product Management</div>
+        <div class="us-menu-item">📦 Order Manager</div>
+        <div class="us-menu-item">📊 Sales Reports</div>
+        <div class="us-menu-item">👤 Users</div>
+        <div class="us-menu-item">🚪 Log Out</div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="us-main">
+
+      <!-- Header -->
+      <div class="us-header">
+        <h1>User Dashboard</h1>
+      </div>
+
+      <!-- Cards -->
+      <div class="us-cards">
+        <div class="us-card">
+          <p>Customers</p>
+          <h2>34</h2>
+          <span>Total Customer</span>
+        </div>
+
+        <div class="us-card">
+          <p>Online Users</p>
+          <h2>7</h2>
+          <span>Active Now</span>
+        </div>
+
+        <div class="us-card">
+          <p>New Weekly Sign Ups</p>
+          <h2>8</h2>
+          <span>New Sign Ups</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="us-table-container">
+        <div class="us-table-header">
+          <select class="us-filter">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+
+        <table class="us-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Pending Order</th>
+              <th>Barangay</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>001</td>
+              <td>Juan Dela Cruz</td>
+              <td>2</td>
+              <td>Centro East</td>
+              <td><span class="us-status us-active">Active</span></td>
+            </tr>
+            <tr>
+              <td>002</td>
+              <td>Marcky Balaba</td>
+              <td>1</td>
+              <td>Batal</td>
+              <td><span class="us-status us-active">Active</span></td>
+            </tr>
+            <tr>
+              <td>003</td>
+              <td>Escanor Noil Nis</td>
+              <td>0</td>
+              <td>Dubinan East</td>
+              <td><span class="us-status us-active">Active</span></td>
+            </tr>
+            <tr>
+              <td>004</td>
+              <td>Gojo Satoru</td>
+              <td>0</td>
+              <td>Centro West</td>
+              <td><span class="us-status us-active">Active</span></td>
+            </tr>
+            <tr>
+              <td>005</td>
+              <td>Lelouch vi Britannia</td>
+              <td>0</td>
+              <td>Patul</td>
+              <td><span class="us-status us-active">Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+
+</html>
