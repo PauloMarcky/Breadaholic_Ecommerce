@@ -5,8 +5,8 @@ import { useNavigate, NavLink } from "react-router-dom";
 const navItems = [
   { id: "products", path: "/product_manager", icon: "📦", label: "Product Management" },
   { id: "orders", path: "/order_manager", icon: "🧾", label: "Order Manager" },
-  { id: "sales", path: "/admin/sales", icon: "📊", label: "Sales Reports" },
-  { id: "users", path: "/admin/users", icon: "👥", label: "Users" },
+  { id: "sales", path: "/sales_report", icon: "📊", label: "Sales Reports" },
+  { id: "users", path: "/user_manager", icon: "👥", label: "Users" },
 ];
 
 export function SidebarAdmin({ setPage }) {
@@ -46,7 +46,7 @@ export function SidebarAdmin({ setPage }) {
                 isActive ? "sb-nav-item sb-active" : "sb-nav-item"
               }
             >
-              <span className="sb-nav-icon">{n.icon}</span>
+              <span className="sb-nav-icon"></span>
               {n.label}
             </NavLink>
           ))}

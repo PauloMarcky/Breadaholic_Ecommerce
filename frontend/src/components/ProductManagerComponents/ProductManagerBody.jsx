@@ -14,10 +14,11 @@ const StatCard = ({ label, value, sub, color }) => (
 );
 const Btn = ({ children, onClick, variant = 'primary', style: s = {}, disabled }) => (
   <button onClick={onClick} disabled={disabled} className={`pm-btn pm-btn-${variant}`} style={s}>{children}</button>
-);
-const ProductModal = ({ product, onSave, onClose }) => {
-  const [form, setForm] = useState(product || { name: '', price: '', stock: '', category: 'Pastries' });
+); const ProductModal = ({ product, onSave, onClose }) => {
+  // Initialize with ingredients field
+  const [form, setForm] = useState(product || { name: '', price: '', stock: '', category: 'Pastries', ingredients: '' });
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+
   return (
     <div className="pm-modal-overlay" onClick={onClose}>
       <div className="pm-modal-content" onClick={e => e.stopPropagation()}>
@@ -37,6 +38,26 @@ const ProductModal = ({ product, onSave, onClose }) => {
                 <option>Pastries</option><option>Coffee</option><option>Drinks</option><option>Cakes</option>
               </select>
             </div>
+
+            {/* ─── New Ingredients Textarea ─── */}
+            <div className="pm-form-group">
+              <label className="pm-form-label">Ingredients</label>
+              <textarea
+                value={form.ingredients || ''}
+                onChange={set('ingredients')}
+                className="pm-form-input"
+                rows={3}
+                style={{
+                  resize: 'none',       /* Disables manual resizing */
+                  minHeight: '60px',    /* Sets a compact fixed height */
+                  maxHeight: '80px',    /* Caps max height */
+                  overflowY: 'auto',    /* Adds scrollbar if content overflows */
+                  paddingTop: '8px',
+                  paddingBottom: '8px'
+                }}
+              />
+            </div>
+
             <div className="pm-modal-actions">
               <Btn onClick={() => onSave(form)}>Save Product</Btn>
               <Btn onClick={onClose} variant="secondary">Cancel</Btn>
@@ -50,14 +71,14 @@ const ProductModal = ({ product, onSave, onClose }) => {
 
 /* ─── Component ─── */
 const initialProducts = [
-  { id: 1, name: "Spanish Bread", price: 15, stock: 120, category: "Pastries", updated: "30/6/25", emoji: "" },
-  { id: 2, name: "Pandesal", price: 5, stock: 200, category: "Pastries", updated: "30/6/25", emoji: "" },
-  { id: 3, name: "Ensaymada", price: 45, stock: 35, category: "Pastries", updated: "30/6/25", emoji: "" },
-  { id: 4, name: "Brewed Coffee", price: 80, stock: 0, category: "Coffee", updated: "30/6/25", emoji: "" },
-  { id: 5, name: "Cheese Roll", price: 25, stock: 60, category: "Pastries", updated: "30/6/25", emoji: "" },
-  { id: 6, name: "Ube Bread", price: 30, stock: 45, category: "Pastries", updated: "30/6/25", emoji: "" },
-  { id: 7, name: "Latte", price: 95, stock: 0, category: "Coffee", updated: "29/6/25", emoji: "" },
-  { id: 8, name: "Croissant", price: 55, stock: 22, category: "Pastries", updated: "28/6/25", emoji: "" },
+  { id: 1, name: "Spanish Bread", price: 15, stock: 120, category: "Pastries", updated: "30/6/25", emoji: "🍞" },
+  { id: 2, name: "Pandesal", price: 5, stock: 200, category: "Pastries", updated: "30/6/25", emoji: "🥖" },
+  { id: 3, name: "Ensaymada", price: 45, stock: 35, category: "Pastries", updated: "30/6/25", emoji: "🥐" },
+  { id: 4, name: "Brewed Coffee", price: 80, stock: 0, category: "Coffee", updated: "30/6/25", emoji: "☕" },
+  { id: 5, name: "Cheese Roll", price: 25, stock: 60, category: "Pastries", updated: "30/6/25", emoji: "🥐" },
+  { id: 6, name: "Ube Bread", price: 30, stock: 45, category: "Pastries", updated: "30/6/25", emoji: "🍞" },
+  { id: 7, name: "Latte", price: 95, stock: 0, category: "Coffee", updated: "29/6/25", emoji: "☕" },
+  { id: 8, name: "Croissant", price: 55, stock: 22, category: "Pastries", updated: "28/6/25", emoji: "🥐" },
 ];
 
 function ProductManagerBody() {
@@ -72,40 +93,58 @@ function ProductManagerBody() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="pm-container">
       {modal && <ProductModal product={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      <PageHeader title="Product Management" />
-      <div className="product-stats">
-        <StatCard label="Out of Stock" value={outOfStock} sub="Unavailable" />
-        <StatCard label="Total Products" value={products.length} sub="In catalog" />
-        <StatCard label="Latest Added" value={6} sub="Recently added" color="var(--amber)" />
-      </div>
-      <div className="table-wrapper">
-        <div className="table-header">
-          <h3>All Products</h3>
-          <Btn onClick={() => setModal('new')} style={{ fontSize: 12, padding: '6px 14px' }}>+ Add Product</Btn>
+
+      {/* Fixed Header Section */}
+      <div className="pm-fixed-section">
+        <PageHeader title="Product Management" />
+        <div className="product-stats">
+          <StatCard label="Out of Stock" value={outOfStock} sub="Unavailable" />
+          <StatCard label="Total Products" value={products.length} sub="In catalog" />
+          <StatCard label="Latest Added" value={6} sub="Recently added" color="var(--amber)" />
         </div>
-        <table>
-          <thead><tr><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th>Category</th><th>Last Update</th><th>Actions</th></tr></thead>
-          <tbody>
-            {products.map(p => (
-              <tr key={p.id}>
-                <td><div className="product-img">{p.emoji}</div></td>
-                <td style={{ fontWeight: 600 }}>{p.name}</td>
-                <td style={{ color: 'var(--amber-dk)', fontWeight: 600 }}>₱{p.price}</td>
-                <td><span className={p.stock === 0 ? 'stock-out' : p.stock < 20 ? 'stock-low' : 'stock-ok'}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
-                <td>{p.category}</td>
-                <td style={{ color: 'var(--muted)' }}>{p.updated}</td>
-                <td>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => setModal(p)} className="action-btn">✏️</button>
-                    <button onClick={() => setProducts(ps => ps.filter(x => x.id !== p.id))} className="action-btn delete">🗑️</button>
-                  </div>
-                </td>
+      </div>
+
+      {/* Scrollable Table Section */}
+      <div className="pm-table-scroll-wrapper">
+        <div className="table-wrapper">
+          <div className="table-header">
+            <h3>All Products</h3>
+            <Btn onClick={() => setModal('new')} style={{ fontSize: 12, padding: '6px 14px' }}>+ Add Product</Btn>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Category</th>
+                <th>Last Update</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map(p => (
+                <tr key={p.id}>
+                  <td style={{ display: 'flex', justifyContent: 'center' }}><div style={{ display: 'flex', justifyContent: 'center' }} className="product-img">{p.emoji}</div></td>
+                  <td style={{ fontWeight: 600 }}>{p.name}</td>
+                  <td style={{ color: 'var(--amber-dk)', fontWeight: 600 }}>₱{p.price}</td>
+                  <td><span className={p.stock === 0 ? 'stock-out' : p.stock < 20 ? 'stock-low' : 'stock-ok'}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
+                  <td>{p.category}</td>
+                  <td style={{ color: 'var(--muted)' }}>{p.updated}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+                      <button onClick={() => setModal(p)} className="action-btn"><img src="../public/edit-icon.png" alt="" /></button>
+                      <button onClick={() => setProducts(ps => ps.filter(x => x.id !== p.id))} className="action-btn delete"><img src="../public//delete-icon.png" alt="" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

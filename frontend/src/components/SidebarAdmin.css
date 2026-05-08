@@ -1,5 +1,5 @@
 .sb {
-  width: 240px;
+  width: 300px;
   min-width: 240px;
   background: var(--sb);
   display: flex;
@@ -14,15 +14,15 @@
 }
 
 .sb-title {
-  font-family: 'Playfair Display', serif;
-  color: #F0C060;
-  font-size: 21px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  color: var(--text-light);
+  font-size: 2em;
   letter-spacing: 0.3px;
   margin: 0;
 }
 
 .sb-subtitle {
-  color: rgba(240, 192, 96, 0.4);
+  color: var(--text-sub-light);
   font-size: 9px;
   letter-spacing: 2.5px;
   text-transform: uppercase;
@@ -32,25 +32,25 @@
 /* ── Nav ── */
 .sb-nav {
   flex: 1;
+  margin-top: 20px;
   padding: 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
 
 .sb-nav-item {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 10px 14px;
+  padding: 15px 14px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: .9em;
   font-weight: 500;
   transition: all 0.15s;
   background: transparent;
-  color: rgba(240, 200, 140, 0.55);
-  border: 1px solid transparent;
+  color: #f0c88c8c;
   text-decoration: none;
   /* Added for NavLink */
 }

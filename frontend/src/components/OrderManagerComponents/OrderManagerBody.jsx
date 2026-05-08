@@ -20,6 +20,8 @@ const initialOrders = [
 function OrderManagerBody() {
   const [orders, setOrders] = useState(initialOrders);
   const [selected, setSelected] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
   const pending = orders.filter(o => o.status === "PENDING").length;
   const preparing = orders.filter(o => o.status === "PREPARING").length;
   const completed = orders.filter(o => o.status === "COMPLETED").length;
@@ -27,49 +29,82 @@ function OrderManagerBody() {
 
   const update = (id, status) => setOrders(os => os.map(o => o.id === id ? { ...o, status } : o));
 
+  const handleView = (id) => {
+    setSelected(id);
+    setPanelOpen(true);
+    document.body.classList.add('no-scroll');
+  };
+
+  const handleClose = () => {
+    setPanelOpen(false);
+    setTimeout(() => setSelected(null), 300);
+    document.body.classList.remove('no-scroll');
+  };
+
   return (
-    <div className="order-layout">
-      <div className="order-list">
-        <PageHeader title="Order Management" />
-        <div className="order-stats">
-          <StatCard label="Pending Orders" value={pending} sub="Awaiting action" color="#856404" />
-          <StatCard label="Preparing" value={preparing} sub="In kitchen" color="#004085" />
-          <StatCard label="Completed Today" value={completed} sub="Fulfilled" color="#155724" />
+    <>
+      {/* Main Content Area - Fixed Height Layout */}
+      <div className="om-container">
+
+        {/* Fixed Header Section */}
+        <div className="om-fixed-section">
+          <PageHeader title="Order Management" />
+          <div className="order-stats">
+            <StatCard label="Pending Orders" value={pending} sub="Awaiting action" color="#856404" />
+            <StatCard label="Preparing" value={preparing} sub="In kitchen" color="#004085" />
+            <StatCard label="Completed Today" value={completed} sub="Fulfilled" color="#155724" />
+          </div>
         </div>
-        <div className="table-wrapper">
-          <div className="table-header"><h3>All Orders</h3></div>
-          <table>
-            <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-              {orders.map(o => {
-                const total = o.items.reduce((s, i) => s + i.price, 0) + o.shipping;
-                return (
-                  <tr key={o.id}>
-                    <td style={{ fontWeight: 700, color: 'var(--amber-dk)' }}># <span style={{ fontFamily: 'monospace' }}>{o.id}</span></td>
-                    <td style={{ fontWeight: 600 }}>{o.name}</td>
-                    <td style={{ color: 'var(--muted)' }}>{o.date}</td>
-                    <td style={{ fontWeight: 600 }}>₱{total}</td>
-                    <td><Badge status={o.status} /></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <Btn onClick={() => setSelected(o.id)} variant={selected === o.id ? 'secondary' : 'ghost'} style={{ fontSize: 12, padding: '5px 10px' }}>{selected === o.id ? 'Viewing' : 'View'}</Btn>
-                        <button onClick={() => setOrders(os => os.filter(x => x.id !== o.id))} className="action-btn delete">🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+
+        {/* Scrollable Table Section */}
+        <div className="om-table-scroll-wrapper">
+          <div className="table-wrapper">
+            <div className="table-header"><h3>All Orders</h3></div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(o => {
+                  const total = o.items.reduce((s, i) => s + i.price, 0) + o.shipping;
+                  return (
+                    <tr key={o.id}>
+                      <td style={{ fontWeight: 700, color: 'var(--amber-dk)' }}><span style={{ fontFamily: 'monospace' }}>{o.id}</span></td>
+                      <td style={{ fontWeight: 600 }}>{o.name}</td>
+                      <td style={{ color: 'var(--muted)' }}>{o.date}</td>
+                      <td style={{ fontWeight: 600 }}>₱{total}</td>
+                      <td><Badge status={o.status} /></td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+                          <Btn onClick={() => handleView(o.id)} variant="ghost" style={{ fontSize: 12, padding: '5px 10px' }}>View</Btn>
+                          <button onClick={() => setOrders(os => os.filter(x => x.id !== o.id))} className="action-btn delete"><img src="../public/delete-icon.png" alt="" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <aside className="detail-panel">
-        {!sel ? (
-          <div className="detail-empty"><span style={{ fontSize: 42 }}>🧾</span><p style={{ fontSize: 14, fontWeight: 500, textAlign: 'center' }}>Select an order to view its details</p></div>
-        ) : (
+      {/* Sliding Detail Panel */}
+      <div className={`detail-panel ${panelOpen ? 'active' : ''}`}>
+        <div className="detail-header">
+          <h3>Order Detail</h3>
+          <button onClick={handleClose} className="close-btn">✕</button>
+        </div>
+
+        {sel && (
           <>
-            <div className="detail-header"><h3>Order Detail</h3><button onClick={() => setSelected(null)} className="close-btn">✕</button></div>
             <div className="order-id-box">#{sel.id}</div>
             <p className="items-label">Items Ordered</p>
             {sel.items.map((item, i) => (
@@ -92,8 +127,11 @@ function OrderManagerBody() {
             </div>
           </>
         )}
-      </aside>
-    </div>
+      </div>
+
+      {/* Overlay */}
+      {panelOpen && <div className="detail-overlay" onClick={handleClose}></div>}
+    </>
   );
 }
 

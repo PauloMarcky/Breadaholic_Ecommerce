@@ -1,0 +1,145 @@
+.um-page-header {
+  background: linear-gradient(135deg, var(--amber), var(--amber-lt));
+  color: #fff;
+  padding: 16px 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(192, 122, 26, 0.35);
+}
+
+.um-page-header h1 {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.um-stat-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  flex: 1;
+}
+
+.um-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  margin-bottom: 6px;
+}
+
+.um-stat-value {
+  font-weight: 700;
+  font-family: 'Playfair Display', serif;
+  line-height: 1.1;
+}
+
+.um-stat-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.um-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+
+.um-badge-Active {
+  background: #D4EDDA;
+  color: #155724;
+}
+
+.um-badge-Inactive {
+  background: #F8D7DA;
+  color: #721C24;
+}
+
+.um-pending-badge {
+  background: #FFF3CD;
+  color: #856404;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.um-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--amber-dk);
+}
+
+.um-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.um-select {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--brown);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+
+.um-role-select {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--cream);
+  color: var(--brown);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 85px;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+
+.um-role-select:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+.um-role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.um-role-admin {
+  background: #CCE5FF;
+  color: #004085;
+}
+
+.um-role-user {
+  background: #E8E8E8;
+  color: #555;
+}
