@@ -3,6 +3,7 @@ import { ProductSidebar } from '../MenuComponents/ProductSidebar';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { socket, connectSocket } from '../../utils/socket.js';
+import './Products.css'
 
 export function Products({ filters }) {
   const [AllProducts, setAllProducts] = useState([]);
@@ -11,6 +12,7 @@ export function Products({ filters }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [flyingItem, setFlyingItem] = useState(null); // { src, startX, startY, endX, endY }
   const [isAnimating, setIsAnimating] = useState(false);
+
 
   const currentUserId = localStorage.getItem("currentUserId");
 
@@ -45,7 +47,6 @@ export function Products({ filters }) {
     };
   }, [currentUserId]);
 
-  // ✅ Accept 'e' as a third parameter
   const handleAddToBasket = (productId, quantityProduct, e) => {
     if (!currentUserId) {
       alert("Please log in to add items to cart!");
@@ -54,7 +55,6 @@ export function Products({ filters }) {
 
     const finalQty = quantityProduct && quantityProduct > 0 ? quantityProduct : 1;
 
-    // ✅ Fly animation is now INSIDE the function
     const productItem = e.target.closest('.product-wrapper');
     const productImg = productItem.querySelector('img');
     const cartIcon = document.getElementById('cart-icon');
@@ -133,29 +133,49 @@ export function Products({ filters }) {
       />
 
       <div className="menu-right-side">
-        {filteredProducts.map((product) => (
-          <div className="product-wrapper" key={product.product_id}>
-            <img
-              onClick={() => handleProductClick(product)}
-              className="product-image"
-              src={product.image}
-              alt={product.product_name}
-            />
-            <div className="product-details">
-              <p>{product.product_name}</p>
-              <p className="price-wrapper">₱{product.price}</p>
+        {filteredProducts.map((product) => {
+          const isOutOfStock = product.stock === 0;
+
+          return (
+            <div
+              className={`product-wrapper ${isOutOfStock ? 'is-out-of-stock' : ''}`}
+              key={product.product_id}
+            >
+              {isOutOfStock && <div className='out-stock-message'>OUT OF STOCK</div>}
+
+              <img
+                onClick={() => !isOutOfStock && handleProductClick(product)}
+                className="product-image"
+                src={product.image}
+                alt={product.product_name}
+              />
+
+              <div className="product-details">
+                <p>{product.product_name}</p>
+                <p className="price-wrapper">₱{product.price}</p>
+              </div>
+
+              <div className="btn-below">
+                <button
+                  disabled={isOutOfStock}
+                  onClick={(e) => {
+                    const qtyInput = e.target.parentNode.querySelector('input');
+                    handleAddToBasket(product.product_id, parseInt(qtyInput.value), e);
+                  }}
+                >
+                  {isOutOfStock ? 'Unavailable' : 'Add to Basket'}
+                </button>
+                <input
+                  type="number"
+                  className="product-qty-input"
+                  defaultValue={1}
+                  min={1}
+                  disabled={isOutOfStock}
+                />
+              </div>
             </div>
-            <div className="btn-below">
-              <button onClick={(e) => {
-                const qtyInput = e.target.parentNode.querySelector('input');
-                handleAddToBasket(product.product_id, parseInt(qtyInput.value), e);
-              }}>
-                Add to Basket
-              </button>
-              <input type="number" className="product-qty-input" defaultValue={1} min={1} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );

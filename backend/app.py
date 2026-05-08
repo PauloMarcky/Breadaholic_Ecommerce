@@ -374,7 +374,6 @@ def confirm_order():
         conn = db_pool.get_connection()
         cursor = conn.cursor()
 
-        # ── 1. Stock validation (lock rows to prevent race conditions) ──
         for item in items:
             cursor.execute(
                 "SELECT stock FROM Products WHERE product_id = %s FOR UPDATE",
@@ -393,7 +392,6 @@ def confirm_order():
                     "error": f"Sorry, only {current_stock} unit(s) left for product ID {item['product_id']}."
                 }), 400
 
-        # ── 2. Insert into ORDERS ──
         order_query = """
             INSERT INTO ORDERS (user_id, barangay, street_name, landmark, order_total, shipping_fee, status)
             VALUES (%s, %s, %s, %s, %s, %s, 'Pending')
@@ -408,7 +406,6 @@ def confirm_order():
         ))
         new_order_id = cursor.lastrowid
 
-        # ── 3. Insert into ORDER_ITEMS ──
         item_query = """
             INSERT INTO ORDER_ITEMS (order_id, product_id, quantity, price)
             VALUES (%s, %s, %s, %s)
@@ -421,21 +418,17 @@ def confirm_order():
                 item['price']
             ))
 
-        # ── 4. Deduct stock from Products ──
         deduct_query = "UPDATE Products SET stock = stock - %s WHERE product_id = %s"
         for item in items:
             cursor.execute(
                 deduct_query, (item['quantity'], item['product_id']))
 
-        # ── 5. Clear the user's cart ──
         delete_cart_query = "DELETE FROM cart_item WHERE user_id = %s AND product_id = %s"
         for item in items:
             cursor.execute(delete_cart_query, (uid, item['product_id']))
 
         conn.commit()
 
-        # ── 6. Notify frontend (wrapped separately so a socket error never
-        #       causes a 500 after a successful commit) ──
         try:
             socketio.emit('cart_updated', {'user_id': uid}, room=f'user_{uid}')
             socketio.emit('stock_updated', {
@@ -600,6 +593,193 @@ def get_orders():
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
+            conn.close()
+
+
+# ── NEW: GET USER ADDRESSES ──
+@app.route('/get_user_addresses/<int:user_id>', methods=['GET'])
+def get_user_addresses(user_id):
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """SELECT barangay, street_name, landmark, 
+               barangay_second, street_name_second, landmark_second, 
+               barangay_third, street_name_third, landmark_third 
+               FROM Users WHERE user_id = %s""",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        addresses = []
+        if user['barangay'] or user['street_name']:
+            addresses.append({
+                "id": 1, "position": 1,
+                "barangay": user['barangay'] or "",
+                "street": user['street_name'] or "",
+                "landmark": user['landmark'] or ""
+            })
+        if user['barangay_second'] or user['street_name_second']:
+            addresses.append({
+                "id": 2, "position": 2,
+                "barangay": user['barangay_second'] or "",
+                "street": user['street_name_second'] or "",
+                "landmark": user['landmark_second'] or ""
+            })
+        if user['barangay_third'] or user['street_name_third']:
+            addresses.append({
+                "id": 3, "position": 3,
+                "barangay": user['barangay_third'] or "",
+                "street": user['street_name_third'] or "",
+                "landmark": user['landmark_third'] or ""
+            })
+
+        return jsonify(addresses), 200
+    except Exception as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+
+# ── NEW: SAVE ADDRESS ──
+@app.route('/save_address', methods=['POST'])
+def save_address():
+    conn = None
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        position = data.get('position')  # 1, 2, 3, or null for auto-assign
+        barangay = data.get('barangay')
+        street = data.get('street')
+        landmark = data.get('landmark', '')
+
+        if not user_id or not barangay or not street:
+            return jsonify({"error": "Missing required fields (user_id, barangay, street)"}), 400
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        # Auto-assign position if not provided
+        if position is None:
+            cursor.execute(
+                "SELECT barangay, street_name, barangay_second, street_name_second, barangay_third, street_name_third FROM Users WHERE user_id = %s", (user_id,))
+            user_data = cursor.fetchone()
+            if not user_data:
+                return jsonify({"error": "User not found"}), 404
+
+            if not user_data[0] and not user_data[1]:
+                position = 1
+            elif not user_data[2] and not user_data[3]:
+                position = 2
+            elif not user_data[4] and not user_data[5]:
+                position = 3
+            else:
+                return jsonify({"error": "Maximum 3 addresses reached"}), 400
+
+        # Update DB based on position
+        if position == 1:
+            cursor.execute("UPDATE Users SET barangay = %s, street_name = %s, landmark = %s WHERE user_id = %s",
+                           (barangay, street, landmark, user_id))
+        elif position == 2:
+            cursor.execute("UPDATE Users SET barangay_second = %s, street_name_second = %s, landmark_second = %s WHERE user_id = %s",
+                           (barangay, street, landmark, user_id))
+        elif position == 3:
+            cursor.execute("UPDATE Users SET barangay_third = %s, street_name_third = %s, landmark_third = %s WHERE user_id = %s",
+                           (barangay, street, landmark, user_id))
+        else:
+            return jsonify({"error": "Invalid position"}), 400
+
+        conn.commit()
+        return jsonify({"status": "success", "message": "Address saved successfully"}), 200
+    except Exception as err:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+
+# ── NEW: DELETE ADDRESS ──
+@app.route('/delete_address', methods=['POST'])
+def delete_address():
+    conn = None
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        position = data.get('position')
+
+        if not user_id or position is None:
+            return jsonify({"error": "Missing user_id or position"}), 400
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        if position == 1:
+            cursor.execute(
+                "UPDATE Users SET barangay = NULL, street_name = NULL, landmark = NULL WHERE user_id = %s", (user_id,))
+        elif position == 2:
+            cursor.execute(
+                "UPDATE Users SET barangay_second = NULL, street_name_second = NULL, landmark_second = NULL WHERE user_id = %s", (user_id,))
+        elif position == 3:
+            cursor.execute(
+                "UPDATE Users SET barangay_third = NULL, street_name_third = NULL, landmark_third = NULL WHERE user_id = %s", (user_id,))
+        else:
+            return jsonify({"error": "Invalid position"}), 400
+
+        conn.commit()
+        return jsonify({"status": "success", "message": "Address deleted successfully"}), 200
+    except Exception as err:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+
+# ── NEW: GET ALL USERS (FIXED) ──
+@app.route('/api/users', methods=['GET'])
+def get_all_users():
+    conn = None
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        offset = (page - 1) * per_page
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT COUNT(*) as total FROM Users")
+        total = cursor.fetchone()['total']
+
+        cursor.execute(
+            """SELECT user_id, mobile_number, first_name, last_name, 
+               barangay, street_name, profile_picture, date_joined, status, role 
+               FROM Users ORDER BY date_joined DESC LIMIT %s OFFSET %s""",
+            (per_page, offset)
+        )
+        users = cursor.fetchall()
+
+        for u in users:
+            if u['date_joined'] and hasattr(u['date_joined'], 'isoformat'):
+                u['date_joined'] = u['date_joined'].isoformat()
+
+        return jsonify({
+            "users": users,
+            "total": total,
+            "pages": (total + per_page - 1) // per_page if per_page else 0,
+            "current_page": page
+        }), 200
+    except Exception as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if conn and conn.is_connected():
             conn.close()
 
 
