@@ -4,6 +4,7 @@ import { useState } from "react";
 import Select from "react-select";
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import "./react-select.css"
 
 const barangayOptions = [
   { value: "Calao East", label: "Calao East" },
@@ -34,6 +35,7 @@ export function Registration() {
     barangay: "",
     street: "",
     password: "",
+    confirmPass: "",
   });
 
   const navigate = useNavigate();
@@ -41,6 +43,8 @@ export function Registration() {
   const showSignUp = (e) => {
     e.preventDefault();
     setIsSignIn(!isSignIn);
+    setErrorSignUp("");
+    setLoginError("");
   }
 
   const handleLogInChange = (e) => {
@@ -49,11 +53,12 @@ export function Registration() {
   };
 
   const handleChange = (e) => {
+    setErrorSignUp("");
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-
   const handleSelectChange = (selectedOption) => {
+    setErrorSignUp("");
     setFormData({ ...formData, barangay: selectedOption.value });
   };
 
@@ -61,7 +66,12 @@ export function Registration() {
     e.preventDefault();
 
     if (!formData.barangay) {
-      setErrorSignUp("ERROR: Please enter Barangay to continue");
+      setErrorSignUp("Please select a Barangay to continue.");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPass) {
+      setErrorSignUp("Passwords do not match.");
       return;
     }
 
@@ -78,6 +88,7 @@ export function Registration() {
           barangay: formData.barangay,
           street_name: formData.street,
           password: formData.password,
+          confirmPass: formData.confirmPass,
           status: "active"
         }),
       });
@@ -86,10 +97,11 @@ export function Registration() {
 
       if (response.ok) {
         localStorage.setItem("currentUserId", data.user_id);
-        alert("Registration Successful!");
+        sessionStorage.setItem('justSignedIn', 'true');
+        localStorage.setItem('userName', data.first_name);
         navigate("/home");
       } else {
-        setErrorSignUp("INVALID: Mobile Number Already Exist!");
+        setErrorSignUp(data.message || "Mobile number already exists.");
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -98,12 +110,10 @@ export function Registration() {
   };
 
   const handleLogInSubmit = async (e) => {
-
     e.preventDefault();
     setLoginError("");
 
     try {
-
       const response = await fetch("http://127.0.0.1:5000/logIn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,9 +121,10 @@ export function Registration() {
           mobile_number: logInData.mobile,
           password: logInData.password
         })
-      })
+      });
 
       const data = await response.json();
+
       if (response.ok) {
         localStorage.setItem("currentUserId", data.user_id);
         localStorage.setItem('isLoggedIn', 'true');
@@ -126,20 +137,23 @@ export function Registration() {
         } else {
           navigate("/home");
         }
+      } else {
+        // ✅ FIX: This else block was completely missing before!
+        // Wrong credentials (401, 404, etc.) were silently ignored.
+        setLoginError(data.message || "Invalid mobile number or password.");
       }
 
     } catch (error) {
       console.error("Login Error:", error);
-      setLoginError("Could not connect to the server");
+      setLoginError("Could not connect to the server.");
     }
-
   }
 
   return (
     <div className={style.pageBg}>
       <div className={style.mainContainer}>
 
-        < div className={style.leftSideContainer}>
+        <div className={style.leftSideContainer}>
           <div className={style.logoContainer}>
             <img className={style.logoImg} src={logo} alt="" />
           </div>
@@ -157,10 +171,23 @@ export function Registration() {
               <p className={style.welcomeText}>WELCOME DEAR COSTUMER</p>
               <p className={style.loginText}>LOG IN TO ORDER</p>
 
-              <form id={style.loginForm} onSubmit={handleLogInSubmit} >
-                <input className={style.field} name="mobile" onChange={handleLogInChange} type="tel" placeholder="Mobile Number" required />
-                <input className={style.field} name="password" onChange={handleLogInChange} type="password" placeholder="Password" required />
-                {loginError && <p style={{ color: "red", textAlign: "center", fontSize: "12px", margin: "10px 0px", fontFamily: "Arial" }}>{loginError}</p>}
+              <form id={style.loginForm} onSubmit={handleLogInSubmit}>
+                <input
+                  className={style.field}
+                  name="mobile"
+                  onChange={handleLogInChange}
+                  type="tel"
+                  placeholder="Mobile Number"
+                  required />
+                <input
+                  className={style.field}
+                  name="password"
+                  onChange={handleLogInChange}
+                  type="password"
+                  placeholder="Password"
+                  required />
+                {/* ✅ loginError now shows because the else block was added */}
+                {loginError && <p className={style.errorMessage}>{loginError}</p>}
                 <button className={style.btnPrimary} type="submit">Log In</button>
               </form>
 
@@ -174,7 +201,7 @@ export function Registration() {
             <div className={style.formContainer} key="signup-section">
 
               <p className={style.welcomeText}>WELCOME DEAR COSTUMER</p>
-              <p className={style.signupText}>SIGN IN TO ORDER</p>
+              <p className={style.signupText}>SIGN UP TO ORDER</p>
 
               <p className={style.fieldLabel}>Personal Information</p>
               <form onSubmit={handleSubmit}>
@@ -210,6 +237,11 @@ export function Registration() {
                     maxMenuHeight={150}
                     onChange={handleSelectChange}
                     classNamePrefix="reactSelect"
+                    isSearchable={false}
+                    components={{
+                      IndicatorSeparator: () => null,
+                      DropdownIndicator: () => null
+                    }}
                   />
                   <input
                     className={style.field}
@@ -226,7 +258,17 @@ export function Registration() {
                   name="password"
                   onChange={handleChange}
                   required />
-                {errorSignUp && <p style={{ color: "red", fontSize: "12px", margin: "10px 0px", textAlign: "center", fontFamily: "Arial" }}>{errorSignUp}</p>}
+
+                <input
+                  className={style.field}
+                  type="password"
+                  placeholder="Confirm Password"
+                  name="confirmPass"
+                  onChange={handleChange}
+                  required />
+
+                {/* ✅ errorSignUp now shows because overflow is fixed in CSS */}
+                {errorSignUp && <p className={style.errorMessage}>{errorSignUp}</p>}
                 <button className={style.btnPrimary} type="submit">Sign Up</button>
               </form>
 
@@ -238,7 +280,6 @@ export function Registration() {
         </div>
 
       </div>
-    </div >
-
+    </div>
   )
 }

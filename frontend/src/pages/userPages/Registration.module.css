@@ -20,13 +20,6 @@
 }
 
 /* ── Body / Page BG ──────────────────────────────────── */
-
-.messageSuccess {
-  position: fixed;
-  top: 10px;
-}
-
-
 .pageBg {
   width: 100%;
   min-height: 100vh;
@@ -44,13 +37,19 @@
   max-width: 1000px;
   min-height: 550px;
   border-radius: 6px;
-  overflow: hidden;
+
+  /* ✅ FIX: Changed from overflow: hidden to overflow: visible.
+     overflow: hidden was clipping error messages and any content
+     that grew taller than min-height: 550px.
+     Border-radius visual is preserved via the outline below. */
+  overflow: visible;
+
   border: none;
   outline: 2px solid var(--brown-dark);
   outline-offset: 5px;
 }
 
-/* ── Left Panel ─────────────────────────────── */
+/* ── Left Panel ─────────────────────────── */
 .leftSideContainer {
   flex: 1;
   background-color: var(--left-background);
@@ -60,6 +59,8 @@
   justify-content: center;
   position: relative;
   row-gap: 5px;
+  /* ✅ Keep border-radius only on the panels themselves, not the wrapper */
+  border-radius: 6px 0 0 6px;
 }
 
 .logoContainer {
@@ -117,8 +118,8 @@
   justify-content: center;
   padding: 2rem 1.75rem;
   position: relative;
+  border-radius: 0 6px 6px 0;
 }
-
 
 /* ── Form Section ────────────────────────────────────── */
 .formContainer {
@@ -158,14 +159,27 @@
   opacity: 0.8;
 }
 
+/* ── Error Message ────────────────────────────────────── */
+/* ✅ NEW: Proper error class instead of scattered inline styles */
+.errorMessage {
+  color: #c0392b;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.72rem;
+  text-align: center;
+  margin: 8px 0;
+  padding: 6px 10px;
+  background-color: rgba(192, 57, 43, 0.08);
+  border-left: 3px solid #c0392b;
+  border-radius: 3px;
+  animation: fadeIn 0.2s ease;
+}
+
 /* ── Fields ──────────────────────────────────────────── */
 .field {
   display: block;
   width: 100%;
   height: 33px;
-  /* Add a fixed height */
   padding: 0 10px;
-  /* Adjust padding so text stays centered */
   margin-bottom: 10px;
   background: var(--white);
   border: 1.5px solid rgba(100, 50, 5, 0.25);
@@ -213,50 +227,11 @@
   letter-spacing: 0.3px;
 }
 
-/* 1. Shrink the main wrapper */
-:global(.reactSelect__control) {
-  display: block;
-  width: 100%;
-  height: 30px !important;
-  min-height: 33px !important;
-  background: var(--white);
-  border: 1.5px solid rgba(100, 50, 5, 0.25);
-  border-radius: 2px;
-  font-family: 'Lato', sans-serif;
-  color: #9A7020;
-  outline: none;
+.rowTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
-
-:global(.reactSelect__menu) {
-  color: #9A7020;
-  font-family: 'Lato', sans-serif;
-  font-size: 0.7rem;
-}
-
-:global(.reactSelect__single-value) {
-  color: #9A7020 !important;
-}
-
-:global(.reactSelect__value-container) {
-  font-family: 'Lato', sans-serif;
-  font-size: 0.8rem;
-}
-
-:global(.reactSelect__indicators-container) {
-  height: 29px !important;
-}
-
-:global(.reactSelect__indicator) {
-  padding: 2px !important;
-}
-
-:global(.reactSelect__placeholder) {
-  color: #9A7020 !important;
-  font-size: 0.7rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
 
 /* ── Button ──────────────────────────────────────────── */
 .btnPrimary {

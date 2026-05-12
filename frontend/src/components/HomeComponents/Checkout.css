@@ -15,11 +15,14 @@
   outline: 2px solid var(--text-dark);
   max-height: 90vh;
   overflow-y: auto;
+  scrollbar-width: none;
+  overflow: hidden;
 }
+
 
 .orders-grid {
   width: 90%;
-  height: 230px;
+  min-height: 150px;
   background-color: none;
   padding: 10px 0px;
   overflow-y: scroll;
@@ -48,6 +51,7 @@
   width: 50px;
   height: 50px;
   border-radius: 10px;
+  object-fit: cover;
 }
 
 .order-display h5 {
@@ -78,6 +82,23 @@
 }
 
 
+.order-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px 20px;
+  border-radius: 10px;
+  z-index: 1000000;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  font-family: sans-serif;
+  transition: opacity 0.5s ease;
+  width: max-content;
+}
+
 .address-list {
   display: flex;
   flex-direction: column;
@@ -85,6 +106,7 @@
   max-height: 180px;
   overflow-y: auto;
   padding-right: 5px;
+  scrollbar-width: none;
 }
 
 .address-option {

@@ -127,3 +127,16 @@
   font-size: 1.3em;
   color: var(--components);
 }
+
+/* ✅ Support flying animation from sidebar too */
+.product-sidebar .product-profile img,
+.product-wrapper img {
+  /* Ensure images are positionable for animation */
+  position: relative;
+}
+
+/* Optional: Visual feedback when adding from sidebar */
+.product-sidebar button:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}

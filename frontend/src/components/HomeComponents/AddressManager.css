@@ -1,35 +1,291 @@
-.profile-actions {
-  width: 80%;
-  margin: 20px auto;
+.address-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
-.manage-address-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: var(--cream);
+.address-manager h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 2px;
   color: var(--text-dark);
-  border: 2px solid var(--text-dark);
-  border-radius: 8px;
-  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-  font-size: 0.9em;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border-bottom: 2px solid var(--components);
+  padding-bottom: 10px;
+}
+
+/* ── Address List ── */
+.addresses-list {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.no-addresses {
+  text-align: center;
+  color: var(--text-dark);
+  opacity: 0.5;
+  font-size: 0.85rem;
+  padding: 16px 0;
+  letter-spacing: 1px;
+}
+
+.address-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background-color: var(--cream);
+  border: 1.5px solid var(--components);
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.address-item:hover {
+  border-color: var(--btn);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.address-content h5 {
+  margin: 0 0 5px 0;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--components);
+}
+
+.address-content p {
+  margin: 2px 0;
+  font-size: 0.82rem;
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+
+.address-content p strong {
+  color: var(--components);
+}
+
+/* ── Action Buttons ── */
+.address-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.edit-btn {
+  background-color: var(--components);
+  color: var(--cream);
+  border-color: var(--components);
+}
+
+.edit-btn:hover {
+  background-color: var(--btn-hover);
+  color: var(--background);
+}
+
+.delete-btn {
+  background-color: transparent;
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+  color: #fff;
+}
+
+/* ── Form ── */
+.address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background-color: var(--cream);
+  border: 1.5px solid var(--components);
+  border-radius: 10px;
+}
+
+.address-form h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--components);
+}
+
+.address-form input,
+.address-form textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--components);
+  border-radius: 7px;
+  background-color: var(--background);
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  resize: none;
+}
+
+.reactSelectAddressManager__control {
+  width: 100%;
+  padding: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+  background-color: var(--background);
+  border: 1.5px solid var(--components);
+  border-radius: 10px !important;
+  color: var(--text-dark);
+  font-size: .8rem !important;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.reactSelectAddressManager__control:hover {
+  border-color: var(--components);
+}
+
+.reactSelectAddressManager__control--is-focused {
+  border-color: var(--btn) !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.reactSelectAddressManager__value-container {
+  padding: 9px 12px !important;
+  font-family: inherit;
+  font-size: .8rem;
+  color: var(--text-dark);
+}
+
+.reactSelectAddressManager__single-value {
+  color: var(--text-dark) !important;
+  font-size: 0.8rem !important;
+  margin: 0 !important;
+}
+
+.reactSelectAddressManager__indicators-container {
+  height: auto !important;
+  padding: 0 8px !important;
+}
+
+.reactSelectAddressManager__indicator {
+  padding: 4px 8px !important;
+  color: var(--text-dark);
+}
+
+.reactSelectAddressManager__menu {
+  background-color: var(--background);
+  border: 1.5px solid var(--components);
+  border-radius: 7px;
+  margin-top: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.reactSelectAddressManager__menu-list {
+  padding: 0 !important;
+}
+
+.reactSelectAddressManager__option {
+  padding: 10px 12px !important;
+  color: var(--text-dark);
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.reactSelectAddressManager__option--is-focused {
+  background-color: var(--cream);
+}
+
+.reactSelectAddressManager__option--is-selected {
+  background-color: var(--components);
+  color: var(--cream);
+}
+
+.address-form input:focus,
+.address-form textarea:focus {
+  border-color: var(--btn);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.address-form textarea {
+  min-height: 60px;
+  resize: none;
+}
+
+/* ── Form Buttons ── */
+.form-buttons {
+  display: flex;
   gap: 8px;
 }
 
-.manage-address-btn:hover {
+.save-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 9px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  justify-content: center;
+}
+
+.save-btn {
   background-color: var(--btn);
   color: var(--cream);
   border-color: var(--btn);
-  transform: translateY(-2px);
 }
 
-/* Modal Overlay */
-.address-modal-overlay {
+.save-btn:hover {
+  background-color: var(--btn-hover);
+  color: var(--background);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: transparent;
+  color: var(--text-dark);
+  border-color: var(--text-dark);
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background-color: var(--text-dark);
+  color: var(--cream);
+}
+
+/* ── Delete Confirmation Modal ── */
+.confirm-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -37,77 +293,123 @@
   height: 100%;
   background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
-  z-index: 2000;
-  /* Higher than sidebar */
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: modalFadeIn 0.25s ease-out;
+  animation: modalFadeIn 0.2s ease-out;
 }
 
-.address-modal-content {
+.confirm-modal-content {
   background-color: var(--background);
-  border-radius: 16px;
+  border-radius: 12px;
   width: 90%;
-  max-width: 600px;
-  /* Prevents width expansion */
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
-  animation: modalSlideIn 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  animation: modalSlideUp 0.25s cubic-bezier(0.25, 1, 0.5, 1);
   overflow: hidden;
+  border: 1px solid var(--components);
 }
 
-.modal-header {
+.confirm-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
+  padding: 16px 20px;
   background-color: var(--components);
-  border-bottom: 1px solid var(--text-dark);
   color: var(--cream);
+  border-bottom: 1px solid var(--text-dark);
 }
 
-.modal-header h3 {
+.confirm-modal-header h4 {
   margin: 0;
-  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-  text-transform: uppercase;
+  font-size: 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
   letter-spacing: 1px;
 }
 
-.modal-close-btn {
+.confirm-modal-close {
   background: none;
   border: none;
   color: var(--cream);
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
-  padding: 5px;
-  transition: transform 0.2s;
+  padding: 0 4px;
   line-height: 1;
+  transition: transform 0.2s;
 }
 
-.modal-close-btn:hover {
+.confirm-modal-close:hover {
   transform: scale(1.1);
-  color: var(--brown-light);
+  color: #ff6b6b;
 }
 
-.modal-body {
-  padding: 20px;
-  overflow-y: auto;
+.confirm-modal-body {
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.confirm-modal-body p {
+  margin: 8px 0;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.confirm-modal-subtext {
+  font-size: 0.85rem !important;
+  color: #888 !important;
+  font-style: italic;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  background-color: var(--cream);
+  border-top: 1px solid var(--components);
+}
+
+.confirm-cancel,
+.confirm-delete {
   flex: 1;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-/* Override AddressManager default styles for the modal */
-.address-manager {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  width: 100% !important;
+.confirm-cancel {
+  background-color: #95a5a6;
+  color: white;
 }
 
+.confirm-cancel:hover:not(:disabled) {
+  background-color: #7f8c8d;
+}
+
+.confirm-delete {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.confirm-delete:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.confirm-cancel:disabled,
+.confirm-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Animation keyframes (reuse if already defined) */
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -118,9 +420,9 @@
   }
 }
 
-@keyframes modalSlideIn {
+@keyframes modalSlideUp {
   from {
-    transform: translateY(25px) scale(0.97);
+    transform: translateY(20px) scale(0.98);
     opacity: 0;
   }
 

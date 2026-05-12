@@ -6,37 +6,86 @@ export function AllOrders({ onCancel }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Get the current user ID
+  // ✅ NEW: Toast message state
+  const [toastMessage, setToastMessage] = useState({ text: "", type: "" });
+
   const currentUserId = localStorage.getItem("currentUserId");
 
+  // ✅ Auto-dismiss toast after 3 seconds
   useEffect(() => {
-    const fetchUserOrders = async () => {
-      try {
-        // Note: I'm using the endpoint we discussed. 
-        // If your backend specifically filters by user, ensure the URL matches.
-        const res = await axios.get(`http://127.0.0.1:5000/getOrders`);
+    if (toastMessage.text) {
+      const timer = setTimeout(() => {
+        setToastMessage({ text: "", type: "" });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage.text]);
 
-        // Since getOrders returns ALL orders (admin style), 
-        // we filter them here to only show the ones belonging to this user.
-        const userSpecificOrders = res.data.filter(
-          order => String(order.user_id) === String(currentUserId)
-        );
+  // ✅ Helper: Fetch & filter user orders (DRY)
+  const fetchUserOrders = async () => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:5000/getOrders`);
+      const userOrders = res.data.filter(
+        order => String(order.user_id) === String(currentUserId)
+      );
+      setOrders(userOrders);
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    }
+  };
 
-        setOrders(userSpecificOrders);
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     if (currentUserId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserOrders();
+      setLoading(false);
     }
   }, [currentUserId]);
 
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) {
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/cancel_order", {
+        order_id: orderId,
+        user_id: currentUserId
+      });
+
+      // ✅ Show success toast instead of alert
+      setToastMessage({
+        text: response.data.message || "Order cancelled successfully! 🎉",
+        type: "success"
+      });
+
+      // 🔄 Refresh orders list
+      await fetchUserOrders();
+
+    } catch (err) {
+      console.error("Cancel failed:", err);
+      const errorMsg = err.response?.data?.error || "Failed to cancel order";
+
+      // ✅ Show error toast
+      setToastMessage({ text: `❌ ${errorMsg}`, type: "error" });
+    }
+  };
+
   return (
     <>
+      {/* ✅ TOAST MESSAGE AT TOP */}
+      {toastMessage.text && (
+        <div className={`order-toast ${toastMessage.type}`}>
+          <p>{toastMessage.text}</p>
+          <button
+            className="toast-close"
+            onClick={() => setToastMessage({ text: "", type: "" })}
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       <div className="all-order-container">
         <div className="all-order-header">
           <h2>MY ORDERS</h2>
@@ -49,7 +98,6 @@ export function AllOrders({ onCancel }) {
           ) : orders.length > 0 ? (
             orders.map((order) => (
               <div className="orders" key={order.order_id}>
-                {/* Dynamic Status */}
                 <p className={`all-order-status ${order.status.toLowerCase()}`}>
                   {order.status.toUpperCase()}
                 </p>
@@ -59,7 +107,6 @@ export function AllOrders({ onCancel }) {
                 </div>
 
                 <div className="all-order-info">
-                  {/* Joining names from the JOIN query */}
                   <h4>{order.first_name} {order.last_name}</h4>
                   <h4>{order.street_name}, {order.barangay}</h4>
                   <h4>{order.mobile_number}</h4>
@@ -73,9 +120,12 @@ export function AllOrders({ onCancel }) {
                   </div>
                 </div>
 
-                <div className="cancel-btn">
+                <div className="cancel-btn-ord">
                   {order.status === 'Pending' && (
-                    <button onClick={() => console.log("Cancel order:", order.order_id)}>
+                    <button
+                      className="cancel-order-btn"
+                      onClick={() => handleCancelOrder(order.order_id)}
+                    >
                       CANCEL ORDER
                     </button>
                   )}

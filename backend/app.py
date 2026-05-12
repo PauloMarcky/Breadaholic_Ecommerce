@@ -134,7 +134,11 @@ def add_user():
         conn.commit()
         new_id = cursor.lastrowid
         cursor.close()
-        return jsonify({"message": "User added successfully", "user_id": new_id}), 201
+        return jsonify({
+            "message": "User added successfully",
+            "user_id": new_id,
+            "first_name": fname
+        }), 201
     except Exception as err:
         if conn:
             conn.rollback()
@@ -326,15 +330,9 @@ def reduce_quantity():
 @app.route('/broadcast_new_product', methods=['POST'])
 def broadcast_new_product():
     try:
-        data = request.json
-        product_name = data.get('product_name')
-        socketio.emit('new_product_alert', {
-            'message': f'New featured product: {product_name}!',
-            'product_name': product_name
-        }, broadcast=True)
-        return jsonify({"status": "success", "message": "Broadcast sent"}), 200
+        pass
     except Exception as err:
-        return jsonify({"error": str(err)}), 500
+        pass
 
 
 @app.route('/remove_from_cart', methods=['POST'])
@@ -374,75 +372,69 @@ def confirm_order():
         conn = db_pool.get_connection()
         cursor = conn.cursor()
 
+        # 🔒 Validate & Lock stock
         for item in items:
             cursor.execute(
-                "SELECT stock FROM Products WHERE product_id = %s FOR UPDATE",
-                (item['product_id'],)
-            )
-            product = cursor.fetchone()
-
-            if not product:
+                "SELECT stock FROM Products WHERE product_id = %s FOR UPDATE", (item['product_id'],))
+            row = cursor.fetchone()
+            if not row or row[0] < item['quantity']:
                 conn.rollback()
-                return jsonify({"error": f"Product ID {item['product_id']} not found."}), 404
+                return jsonify({"error": f"Not enough stock for product."}), 400
 
-            current_stock = product[0]
-            if current_stock < item['quantity']:
-                conn.rollback()
-                return jsonify({
-                    "error": f"Sorry, only {current_stock} unit(s) left for product ID {item['product_id']}."
-                }), 400
-
-        order_query = """
-            INSERT INTO ORDERS (user_id, barangay, street_name, landmark, order_total, shipping_fee, status)
-            VALUES (%s, %s, %s, %s, %s, %s, 'Pending')
-        """
-        cursor.execute(order_query, (
-            uid,
-            address['barangay'],
-            address['street'],
-            address['landmark'],
-            total_price,
-            shipping_fee
-        ))
+        # 📦 Create order & order items
+        cursor.execute(
+            "INSERT INTO ORDERS (user_id, barangay, street_name, landmark, order_total, shipping_fee, status) VALUES (%s, %s, %s, %s, %s, %s, 'Pending')",
+            (uid, address['barangay'], address['street'],
+             address['landmark'], total_price, shipping_fee)
+        )
         new_order_id = cursor.lastrowid
 
-        item_query = """
-            INSERT INTO ORDER_ITEMS (order_id, product_id, quantity, price)
-            VALUES (%s, %s, %s, %s)
-        """
-        for item in items:
-            cursor.execute(item_query, (
-                new_order_id,
-                item['product_id'],
-                item['quantity'],
-                item['price']
-            ))
-
-        deduct_query = "UPDATE Products SET stock = stock - %s WHERE product_id = %s"
         for item in items:
             cursor.execute(
-                deduct_query, (item['quantity'], item['product_id']))
+                "INSERT INTO ORDER_ITEMS (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
+                (new_order_id, item['product_id'],
+                 item['quantity'], item['price'])
+            )
 
-        delete_cart_query = "DELETE FROM cart_item WHERE user_id = %s AND product_id = %s"
+        # 📉 Deduct stock & collect new values
+        updated_products = []
         for item in items:
-            cursor.execute(delete_cart_query, (uid, item['product_id']))
+            cursor.execute("UPDATE Products SET stock = stock - %s WHERE product_id = %s",
+                           (item['quantity'], item['product_id']))
+            cursor.execute(
+                "SELECT stock FROM Products WHERE product_id = %s", (item['product_id'],))
+            new_stock = max(0, cursor.fetchone()[0])
+            updated_products.append(
+                {'product_id': int(item['product_id']), 'stock': new_stock})
+
+        # 🗑️ Clear cart items from DB
+        for item in items:
+            cursor.execute(
+                "DELETE FROM cart_item WHERE user_id = %s AND product_id = %s", (uid, item['product_id']))
 
         conn.commit()
+        print(
+            f"✅ Order {new_order_id} committed. Stock updates: {updated_products}")
 
+        # 📡 EMIT REAL-TIME UPDATES
         try:
+            # 1. Notify THIS user's cart to refresh & clear
             socketio.emit('cart_updated', {'user_id': uid}, room=f'user_{uid}')
-            socketio.emit('stock_updated', {
-                'items': [{'product_id': i['product_id'], 'quantity_deducted': i['quantity']} for i in items]
-            }, broadcast=True)
-        except Exception as socket_err:
-            print(f"Socket emit failed (order still placed): {socket_err}")
+            print(f"📤 Emitted cart_updated to room user_{uid}")
 
-        return jsonify({"status": "success", "order_id": new_order_id}), 201
+            # 2. Broadcast stock changes to ALL clients
+            socketio.emit('stock_updated', {
+                          'items': updated_products}, broadcast=True)
+            print("📤 Emitted stock_updated globally")
+        except Exception as e:
+            print(f"⚠️ Socket emit failed: {e}")
+
+        return jsonify({"status": "success", "order_id": new_order_id, "message": "Order placed successfully!"}), 201
 
     except Exception as e:
         if conn:
             conn.rollback()
-        print(f"CRITICAL ERROR: {str(e)}")
+        print(f"🚨 Confirm order error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -604,9 +596,9 @@ def get_user_addresses(user_id):
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
-            """SELECT barangay, street_name, landmark, 
-               barangay_second, street_name_second, landmark_second, 
-               barangay_third, street_name_third, landmark_third 
+            """SELECT barangay, street_name, landmark,
+               barangay_second, street_name_second, landmark_second,
+               barangay_third, street_name_third, landmark_third
                FROM Users WHERE user_id = %s""",
             (user_id,)
         )
@@ -704,8 +696,9 @@ def save_address():
         if conn and conn.is_connected():
             conn.close()
 
+# ── REPLACE ONLY THIS ROUTE in your app.py ──
 
-# ── NEW: DELETE ADDRESS ──
+
 @app.route('/delete_address', methods=['POST'])
 def delete_address():
     conn = None
@@ -717,13 +710,14 @@ def delete_address():
         if not user_id or position is None:
             return jsonify({"error": "Missing user_id or position"}), 400
 
+        # ✅ FIX: Block deletion of main address (position 1)
+        if position == 1:
+            return jsonify({"error": "Main address cannot be deleted, only edited."}), 403
+
         conn = db_pool.get_connection()
         cursor = conn.cursor()
 
-        if position == 1:
-            cursor.execute(
-                "UPDATE Users SET barangay = NULL, street_name = NULL, landmark = NULL WHERE user_id = %s", (user_id,))
-        elif position == 2:
+        if position == 2:
             cursor.execute(
                 "UPDATE Users SET barangay_second = NULL, street_name_second = NULL, landmark_second = NULL WHERE user_id = %s", (user_id,))
         elif position == 3:
@@ -743,42 +737,152 @@ def delete_address():
             conn.close()
 
 
-# ── NEW: GET ALL USERS (FIXED) ──
-@app.route('/api/users', methods=['GET'])
-def get_all_users():
+@app.route('/cancel_order', methods=['POST'])
+def cancel_order():
     conn = None
+    cursor = None
     try:
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        offset = (page - 1) * per_page
+        data = request.get_json()
+        order_id = data.get('order_id')
+        user_id = data.get('user_id')
+
+        if not order_id or not user_id:
+            return jsonify({"error": "Missing order_id or user_id"}), 400
 
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT COUNT(*) as total FROM Users")
-        total = cursor.fetchone()['total']
+        # Verify order exists and belongs to user
+        cursor.execute("""
+            SELECT status, user_id FROM orders 
+            WHERE order_id = %s
+        """, (order_id,))
+        order_result = cursor.fetchone()
 
-        cursor.execute(
-            """SELECT user_id, mobile_number, first_name, last_name, 
-               barangay, street_name, profile_picture, date_joined, status, role 
-               FROM Users ORDER BY date_joined DESC LIMIT %s OFFSET %s""",
-            (per_page, offset)
-        )
-        users = cursor.fetchall()
+        if not order_result:
+            return jsonify({"error": "Order not found"}), 404
 
-        for u in users:
-            if u['date_joined'] and hasattr(u['date_joined'], 'isoformat'):
-                u['date_joined'] = u['date_joined'].isoformat()
+        if str(order_result['user_id']) != str(user_id):
+            return jsonify({"error": "Unauthorized"}), 403
+
+        db_status = order_result['status'].lower().strip()
+        if db_status != 'pending':
+            return jsonify({
+                "error": f"Only 'Pending' orders can be cancelled (current: '{order_result['status']}')"
+            }), 400
+
+        # ✅ Get order items BEFORE updating status (to know what stock to restore)
+        cursor.execute("""
+            SELECT product_id, quantity FROM order_items 
+            WHERE order_id = %s
+        """, (order_id,))
+        order_items = cursor.fetchall()
+
+        # ✅ Update order status
+        cursor.execute("""
+            UPDATE orders 
+            SET status = 'Cancelled'
+            WHERE order_id = %s AND user_id = %s
+        """, (order_id, user_id))
+
+        # ✅ Restore stock AND collect updated values for socket emit
+        updated_products = []
+        for item in order_items:
+            # Restore stock
+            cursor.execute("""
+                UPDATE products 
+                SET stock = stock + %s 
+                WHERE product_id = %s
+            """, (item['quantity'], item['product_id']))
+
+            # Get new stock value for real-time update
+            cursor.execute(
+                "SELECT stock FROM products WHERE product_id = %s", (item['product_id'],))
+            new_stock = cursor.fetchone()['stock']
+
+            updated_products.append({
+                'product_id': int(item['product_id']),
+                'stock': int(new_stock)
+            })
+
+        conn.commit()
+        print(
+            f"✅ Order {order_id} cancelled. Stock restored for {len(updated_products)} item(s)")
+
+        # 🚀 EMIT REAL-TIME STOCK UPDATE TO ALL CLIENTS
+        try:
+            socketio.emit('stock_updated', {
+                'items': updated_products,
+                'source': 'order_cancelled',
+                'order_id': order_id
+            }, broadcast=True)
+            print(f"📡 Emitted stock_updated: {updated_products}")
+        except Exception as e:
+            print(f"⚠️ Socket emit failed: {e}")
 
         return jsonify({
-            "users": users,
-            "total": total,
-            "pages": (total + per_page - 1) // per_page if per_page else 0,
-            "current_page": page
+            "message": "Order cancelled successfully",
+            "order_id": order_id
         }), 200
-    except Exception as err:
-        return jsonify({"error": str(err)}), 500
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"❌ Cancel order error: {e}")
+        return jsonify({"error": str(e)}), 500
     finally:
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
+
+
+def restore_stock_for_order(order_id, db_pool):
+    """Add back quantities to products when an order is cancelled"""
+    conn = None
+    cursor = None
+    try:
+        conn = db_pool.get_connection()
+
+        # ✅ FIX: Use dictionary=True to access columns by name
+        cursor = conn.cursor(dictionary=True)
+
+        # Get all items in this order
+        cursor.execute("""
+            SELECT product_id, quantity FROM order_items 
+            WHERE order_id = %s
+        """, (order_id,))
+        items = cursor.fetchall()
+
+        if not items:
+            print(
+                f"⚠️ No items found for order {order_id}. Nothing to restore.")
+            return
+
+        print(
+            f"🔄 Restoring stock for {len(items)} item(s) in order {order_id}...")
+
+        for item in items:
+            cursor.execute("""
+                UPDATE products 
+                SET stock = stock + %s 
+                WHERE product_id = %s
+            """, (item['quantity'], item['product_id']))
+            print(
+                f"  ✅ Added {item['quantity']} back to product {item['product_id']}")
+
+        conn.commit()
+        print(f"✅ Successfully restored stock for order {order_id}")
+
+    except Exception as e:
+        print(f"❌ Stock restore error: {e}")
+        import traceback
+        traceback.print_exc()  # 📌 Shows exact failing line
+        if conn:
+            conn.rollback()
+    finally:
+        if cursor:
+            cursor.close()
         if conn and conn.is_connected():
             conn.close()
 

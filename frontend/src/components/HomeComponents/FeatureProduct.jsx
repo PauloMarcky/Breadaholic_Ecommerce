@@ -1,15 +1,25 @@
 import './FeatureProduct.css'
 import axios from 'axios';
 import { useEffect, useState } from 'react'
+
 export function FeatureProduct() {
   const [featuredProductData, setFeaturedProductData] = useState([]);
   const [flyingItem, setFlyingItem] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const currentUserId = localStorage.getItem("currentUserId");
 
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   useEffect(() => {
     axios.get("http://127.0.0.1:5000/getFeatured")
-      .then(response => setFeaturedProductData(response.data))
+      .then(response => setFeaturedProductData(shuffleArray(response.data)))
       .catch(error => console.log("Error Fetching: ", error));
   }, []);
 

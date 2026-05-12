@@ -2,7 +2,7 @@ import './Checkout.css'
 import axios from 'axios';
 import { useState, useEffect } from 'react'
 
-export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
+export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessage }) { // ✅ added setToastMessage
   const productTotal = itemsToBuy.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const shippingFee = 50;
   const grandTotal = productTotal + shippingFee;
@@ -10,6 +10,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [landmarkInput, setLandmarkInput] = useState("");
+  const [message, setMessage] = useState({ text: "", type: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingAddresses, setIsFetchingAddresses] = useState(true);
 
@@ -43,7 +44,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
 
   const handleConfirmOrder = async () => {
     if (!selectedAddress) {
-      alert("Please select a delivery address!");
+      setMessage({ text: "Please select a delivery address!", type: "error" });
       return;
     }
 
@@ -59,16 +60,22 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
     };
 
     setIsLoading(true);
+    setMessage({ text: "", type: "" });
     try {
       const res = await axios.post("http://127.0.0.1:5000/confirm_order", orderData);
       console.log("Server says:", res.data);
       setSelectedItems([]);
+      setToastMessage({ text: res.data.message, type: "success" });
+
+      // ✅ TRIGGER GUARANTEED REFRESH
+      window.dispatchEvent(new Event('checkout_success'));
+
+      setTimeout(() => setToastMessage({ text: "", type: "" }), 3000);
       onCancel();
-      alert("Order Placed Successfully!");
     } catch (err) {
       console.error(err);
       const serverMessage = err.response?.data?.error;
-      alert(serverMessage || "Something went wrong. Please try again.");
+      setMessage({ text: serverMessage || "Something went wrong. Please try again.", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +101,6 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
 
       {/* ADDRESS SECTION */}
       <div className="order-location">
-
         {isFetchingAddresses ? (
           <p className="loading-text">Loading addresses...</p>
         ) : savedAddresses.length > 0 ? (
@@ -147,6 +153,13 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems }) {
           <p>TOTAL {grandTotal} Pesos</p>
         </div>
       </div>
+
+      {/* ERROR MESSAGE ONLY — success is handled by toast in Header */}
+      {message.text && (
+        <div className={`order-message ${message.type}`}>
+          <p>{message.text}</p>
+        </div>
+      )}
 
       {/* BUTTONS */}
       <div className="below-btn">

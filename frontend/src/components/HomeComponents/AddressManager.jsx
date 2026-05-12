@@ -1,8 +1,9 @@
 import "./AddressManager.css";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Select from "react-select";
 
-export function AddressManager({ userId }) {
+export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
   const [addresses, setAddresses] = useState([]);
   const [editingPosition, setEditingPosition] = useState(null);
   const [formData, setFormData] = useState({
@@ -12,7 +13,30 @@ export function AddressManager({ userId }) {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch addresses on mount
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    position: null
+  });
+
+  const barangayOptions = [
+    { value: "Calao East", label: "Calao East" },
+    { value: "Calaocan", label: "Calaocan" },
+    { value: "Calao West", label: "Calao West" },
+    { value: "Dubinan East", label: "Dubinan East" },
+    { value: "Dubinan West", label: "Dubinan West" },
+    { value: "Patul", label: "Patul" },
+    { value: "Plaridel", label: "Plaridel" },
+    { value: "Rosario", label: "Rosario" },
+    { value: "Sinsayon", label: "Sinsayon" },
+    { value: "Victory Norte", label: "Victory Norte" },
+    { value: "Victory Sur", label: "Victory Sur" },
+    { value: "Villasis", label: "Villasis" },
+  ];
+
+  const handleSelectChange = (selectedOption) => {
+    setFormData({ ...formData, barangay: selectedOption.value });
+  };
+
   useEffect(() => {
     fetchAddresses();
   }, [userId]);
@@ -23,6 +47,7 @@ export function AddressManager({ userId }) {
       setAddresses(res.data);
     } catch (err) {
       console.error("Error fetching addresses:", err);
+      onShowMessage?.("Failed to load addresses", "error");
     }
   };
 
@@ -33,7 +58,7 @@ export function AddressManager({ userId }) {
 
   const handleSaveAddress = async () => {
     if (!formData.barangay || !formData.street) {
-      alert("Please fill in Barangay and Street name!");
+      onShowMessage?.("Please fill in Barangay and Street name!", "error");
       return;
     }
 
@@ -47,32 +72,46 @@ export function AddressManager({ userId }) {
         landmark: formData.landmark
       });
 
-      alert("Address saved successfully!");
+      onShowMessage?.("Address saved successfully!", "success");
       setEditingPosition(null);
       setFormData({ barangay: "", street: "", landmark: "" });
-      fetchAddresses();
+      await fetchAddresses();
+      onAddressUpdate?.();
     } catch (err) {
       console.error("Error saving address:", err);
-      alert("Failed to save address");
+      onShowMessage?.("Failed to save address", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteAddress = async (position) => {
-    if (!window.confirm("Delete this address?")) return;
+  const requestDeleteAddress = (position) => {
+    setDeleteConfirm({ show: true, position });
+  };
 
+  const handleDeleteAddress = async () => {
+    if (!deleteConfirm.position) return;
+
+    setIsLoading(true);
     try {
       await axios.post("http://127.0.0.1:5000/delete_address", {
         user_id: userId,
-        position: position
+        position: deleteConfirm.position
       });
-      alert("Address deleted successfully!");
-      fetchAddresses();
+      onShowMessage?.("Address deleted successfully!", "success");
+      await fetchAddresses();
+      onAddressUpdate?.();
     } catch (err) {
       console.error("Error deleting address:", err);
-      alert("Failed to delete address");
+      onShowMessage?.("Failed to delete address", "error");
+    } finally {
+      setIsLoading(false);
+      setDeleteConfirm({ show: false, position: null });
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, position: null });
   };
 
   const handleEditAddress = (address) => {
@@ -85,38 +124,38 @@ export function AddressManager({ userId }) {
   };
 
   const canAddMore = addresses.length < 3;
-  const availablePositions = ['first', 'second', 'third'].filter(
-    pos => !addresses.some(addr => addr.id === pos)
-  );
 
   return (
     <div className="address-manager">
       <h3>SAVED ADDRESSES</h3>
 
-      {/* Display saved addresses */}
       <div className="addresses-list">
         {addresses.length > 0 ? (
           addresses.map((address) => (
             <div key={address.id} className="address-item">
               <div className="address-content">
-                <h5>{address.position === 1 ? "📍 Address 1" : address.position === 2 ? "📍 Address 2" : "📍 Address 3"}</h5>
+                {/* ✅ Label position 1 as "Main Address" */}
+                <h5>
+                  {address.position === 1
+                    ? "Main Address"
+                    : address.position === 2
+                      ? "Address 2"
+                      : "Address 3"}
+                </h5>
                 <p><strong>Barangay:</strong> {address.barangay}</p>
                 <p><strong>Street:</strong> {address.street}</p>
                 {address.landmark && <p><strong>Landmark:</strong> {address.landmark}</p>}
               </div>
               <div className="address-actions">
-                <button
-                  className="edit-btn"
-                  onClick={() => handleEditAddress(address)}
-                >
+                <button className="edit-btn" onClick={() => handleEditAddress(address)}>
                   Edit
                 </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDeleteAddress(address.id)}
-                >
-                  Delete
-                </button>
+                {/* ✅ FIX: Hide Delete button for Main Address (position 1) — edit only */}
+                {address.position !== 1 && (
+                  <button className="delete-btn" onClick={() => requestDeleteAddress(address.id)}>
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -125,22 +164,36 @@ export function AddressManager({ userId }) {
         )}
       </div>
 
-      {/* Add/Edit Address Form */}
       <div className="address-form">
         <h4>
           {editingPosition
-            ? `Edit Address ${addresses.find(a => a.id === editingPosition)?.position || ''}`
-            : canAddMore ? "Add New Address" : "Maximum 3 addresses reached"}
+            ? `Edit ${addresses.find(a => a.id === editingPosition)?.position === 1
+              ? "Main Address"
+              : `Address ${addresses.find(a => a.id === editingPosition)?.position}`}`
+            : canAddMore
+              ? "Add New Address"
+              : "Maximum 3 addresses reached"}
         </h4>
 
         {editingPosition || canAddMore ? (
           <>
-            <input
-              type="text"
-              name="barangay"
-              placeholder="Barangay"
-              value={formData.barangay}
-              onChange={handleInputChange}
+            <Select
+              options={barangayOptions}
+              placeholder="Select Barangay"
+              maxMenuHeight={150}
+              onChange={handleSelectChange}
+              classNamePrefix="reactSelectAddressManager"
+              value={formData.barangay
+                ? { value: formData.barangay, label: formData.barangay }
+                : null}
+              styles={{
+                placeholder: (base) => ({
+                  ...base,
+                  fontSize: '0.9rem',
+                  color: 'var(--text-dark)',
+                  opacity: 0.6,
+                })
+              }}
             />
             <input
               type="text"
@@ -157,11 +210,7 @@ export function AddressManager({ userId }) {
             />
 
             <div className="form-buttons">
-              <button
-                className="save-btn"
-                onClick={handleSaveAddress}
-                disabled={isLoading}
-              >
+              <button className="save-btn" onClick={handleSaveAddress} disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save Address"}
               </button>
               {editingPosition && (
@@ -180,6 +229,30 @@ export function AddressManager({ userId }) {
           </>
         ) : null}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div className="confirm-modal-overlay" onClick={cancelDelete}>
+          <div className="confirm-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header">
+              <h4>Confirm Delete</h4>
+              <button className="confirm-modal-close" onClick={cancelDelete}>&times;</button>
+            </div>
+            <div className="confirm-modal-body">
+              <p>Are you sure you want to delete this address?</p>
+              <p className="confirm-modal-subtext">This action cannot be undone.</p>
+            </div>
+            <div className="confirm-modal-actions">
+              <button className="confirm-cancel" onClick={cancelDelete} disabled={isLoading}>
+                Cancel
+              </button>
+              <button className="confirm-delete" onClick={handleDeleteAddress} disabled={isLoading}>
+                {isLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,21 +1,38 @@
 import './Album.css'
-import { useRef } from 'react';
+import { useRef, useState } from 'react'; // ✅ add useState
 import { NavLink } from 'react-router-dom'
 
-export function Album() {
+const albumImages = [
+  "/Albums/album1.jpg",
+  "/Albums/album2.jpg",
+  "/Albums/album3.jpg",
+  "/Albums/album4.jpg",
+  "/Albums/album5.jpg",
+];
 
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+export function Album() {
   const scrollRef = useRef(null);
+  const [shuffledAlbums] = useState(() => shuffleArray(albumImages)); // ✅ shuffle once on mount
 
   const scroll = (direction) => {
     const { current } = scrollRef;
     const scrollAmount = 200;
-
     if (direction === 'left') {
       current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
     } else {
       current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
+
   return (
     <>
       <div className="albums-section">
@@ -27,30 +44,20 @@ export function Album() {
           </NavLink>
         </div>
 
-        <button className="albums-arrow" onClick={() => scroll('left')} ><img src="../public/left-arrow.png" alt="" /></button>
+        <button className="albums-arrow" onClick={() => scroll('left')}><img src="../public/left-arrow.png" alt="" /></button>
 
         <div className="albums-container">
           <div className="albums-track" ref={scrollRef}>
-            <div className="album-thumb">
-              <img src="/Albums/album1.jpg" alt="" />
-            </div>
-            <div className="album-thumb">
-              <img src="/Albums/album2.jpg" alt="" />
-            </div>
-            <div className="album-thumb">
-              <img src="/Albums/album3.jpg" alt="" />
-            </div>
-            <div className="album-thumb">
-              <img src="/Albums/album4.jpg" alt="" />
-            </div>
-            <div className="album-thumb">
-              <img src="/Albums/album5.jpg" alt="" />
-            </div>
+            {shuffledAlbums.map((src, index) => ( // ✅ render from shuffled array
+              <div className="album-thumb" key={index}>
+                <img src={src} alt={`album ${index + 1}`} />
+              </div>
+            ))}
           </div>
         </div>
 
-        <button className="albums-arrow" onClick={() => scroll('right')} ><img src="../public/right-arrow.png" alt="" /></button>
+        <button className="albums-arrow" onClick={() => scroll('right')}><img src="../public/right-arrow.png" alt="" /></button>
       </div>
     </>
-  )
+  );
 }

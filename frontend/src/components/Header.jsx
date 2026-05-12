@@ -19,6 +19,7 @@ export function Header() {
   const fileInputRef = useRef(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [showAddressManager, setShowAddressManager] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ text: "", type: "" });
 
   const currentUserId = localStorage.getItem("currentUserId");
 
@@ -27,6 +28,16 @@ export function Header() {
   const openCartSideBar = () => setIsCartOpen(!isCartOpen);
   const openSidebar = () => setIsProfileOpen(!isProfileOpen);
   const handleConfirmation = () => setIsConfirmed(!isConfirmed);
+
+  // ✅ FIX: Extracted as a standalone function so AddressManager can trigger it
+  const fetchUserData = async () => {
+    try {
+      const userRes = await axios.get(`http://127.0.0.1:5000/getUser/${currentUserId}`);
+      setUserData(userRes.data);
+    } catch (err) {
+      console.error("Error refreshing user data:", err);
+    }
+  };
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
@@ -51,7 +62,6 @@ export function Header() {
     navigate("/");
   };
 
-
   const toggleItemSelection = (itemId) => {
     setSelectedItems((prev) =>
       prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
@@ -59,7 +69,15 @@ export function Header() {
   };
 
   useEffect(() => {
-    // Added showAddressManager to the list of conditions that lock scrolling
+    if (toastMessage.text) {
+      const timer = setTimeout(() => {
+        setToastMessage({ text: "", type: "" });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage.text]);
+
+  useEffect(() => {
     const shouldLock = isCartOpen || isProfileOpen || viewAllOrders || proceedCheckout || showAddressManager;
     document.body.style.overflow = shouldLock ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
@@ -79,8 +97,7 @@ export function Header() {
     if (!currentUserId) return;
     const loadInitialData = async () => {
       try {
-        const userRes = await axios.get(`http://127.0.0.1:5000/getUser/${currentUserId}`);
-        setUserData(userRes.data);
+        await fetchUserData();
         await fetchCart();
         connectSocket(currentUserId);
       } catch (err) {
@@ -200,8 +217,10 @@ export function Header() {
                     onCancel={handleCheckout}
                     itemsToBuy={cartItems.filter(item => selectedItems.includes(item.ordItem_id))}
                     setSelectedItems={setSelectedItems}
+                    setToastMessage={setToastMessage}
                   />
                 )}
+                <div className={`view-orders-overlay   ${viewAllOrders && 'visible'}`} ></div>
                 <button className="view" onClick={handleViewingOrders}>VIEW ALL ORDERS</button>
                 {viewAllOrders && <AllOrders onCancel={handleViewingOrders} />}
               </div>
@@ -251,7 +270,11 @@ export function Header() {
                 </li>
                 <li>
                   <img className="info-img-container" src="./public/address.png" alt="" />
-                  <p>{userData ? `${userData.barangay} ${userData.street_name}` : "N/A"}</p>
+                  <p>
+                    {[userData?.street, userData?.barangay, userData?.city]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
                 </li>
                 <li>
                   <img className="info-img-container" src="./public/date-joined.png" alt="" />
@@ -259,7 +282,6 @@ export function Header() {
                 </li>
               </ul>
 
-              {/* NEW BUTTON: MANAGE ADDRESSES */}
               <div className="profile-actions">
                 <button
                   className="manage-address-btn"
@@ -298,9 +320,24 @@ export function Header() {
               </button>
             </div>
             <div className="modal-body">
-              <AddressManager userId={currentUserId} />
+              <AddressManager
+                userId={currentUserId}
+                onShowMessage={(text, type) => setToastMessage({ text, type })}
+                onAddressUpdate={fetchUserData}  // ✅ FIX: Pass fetchUserData so AddressManager can refresh profile
+              />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TOAST MESSAGE */}
+      {toastMessage.text && (
+        <div
+          // eslint-disable-next-line react-hooks/purity
+          key={`toast-${toastMessage.text}-${Date.now()}`}
+          className={`order-message ${toastMessage.type}`}
+        >
+          <p>{toastMessage.text}</p>
         </div>
       )}
     </>

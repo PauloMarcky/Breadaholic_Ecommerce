@@ -8,27 +8,25 @@ import '../../index.css';
 import React, { useEffect, useState } from 'react';
 
 export function Home() {
-  // 1. Initialize state directly from storage. 
-  // This function only runs ONCE when the component is born.
+  // 1. Initialize state directly from storage.
+  // This function only runs ONCE when the component mounts.
   const [welcomeMessage, setWelcomeMessage] = useState(() => {
     const name = localStorage.getItem('userName');
-    const ticket = sessionStorage.getItem('justLoggedIn');
+    const hasTicket =
+      sessionStorage.getItem('justLoggedIn') === 'true' ||
+      sessionStorage.getItem('justSignedIn') === 'true';
 
-    // Only return the name if we haven't shown it this session
-    if (name && ticket === 'true') {
-      return name;
-    }
-    return null;
+    return (name && hasTicket) ? name : null;
   });
+
   useEffect(() => {
     // 2. If the initial state decided to show the message...
     if (welcomeMessage) {
-
-      // 3. BURN THE TICKET immediately. 
-      // This ensures a refresh will NOT find the ticket again.
+      // 3. BURN THE TICKET immediately so a refresh won't show it again.
       sessionStorage.removeItem('justLoggedIn');
+      sessionStorage.removeItem('justSignedIn');
 
-      // 4. Set the timer to hide the UI element
+      // 4. Hide the message after 3 seconds
       const timer = setTimeout(() => {
         setWelcomeMessage(null);
       }, 3000);
@@ -36,6 +34,7 @@ export function Home() {
       return () => clearTimeout(timer);
     }
   }, [welcomeMessage]);
+
   return (
     <>
       {welcomeMessage && (

@@ -37,14 +37,22 @@ export function ProductSidebar({ isOpen, product, onAddToCart }) {
             </div>
 
             <div className="btn-addcart">
-              <button onClick={() => onAddToCart(product.product_id, qty)}>
-                ADD TO BASKET
+              <button
+                onClick={(e) => onAddToCart(product.product_id, qty, e)}  // ✅ Pass 'e'!
+                disabled={product.stock <= 0}
+              >
+                {product.stock <= 0 ? 'OUT OF STOCK' : 'ADD TO BASKET'}
               </button>
               <input
                 type="number"
                 value={qty}
                 min={1}
-                onChange={(e) => setQty(parseInt(e.target.value))}
+                max={product.stock || 1}
+                disabled={product.stock <= 0}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 1;
+                  setQty(Math.min(Math.max(val, 1), product.stock || 1));
+                }}
               />
             </div>
           </div>

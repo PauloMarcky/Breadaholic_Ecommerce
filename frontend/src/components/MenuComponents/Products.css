@@ -174,3 +174,22 @@
   cursor: not-allowed;
   border-color: #bbb;
 }
+
+/* ✅ Flash effect when stock changes */
+.product-wrapper.stock-updated {
+  animation: highlight 1.5s ease;
+}
+
+@keyframes highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+  }
+}
