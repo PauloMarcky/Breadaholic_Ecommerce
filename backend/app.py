@@ -1,5 +1,4 @@
-from flask import send_from_directory
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from mysql.connector import pooling
@@ -8,6 +7,8 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
+
+# ✅ Allow requests from any device on the network
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
@@ -105,22 +106,25 @@ def get_features():
 @app.route('/addUser', methods=['POST'])
 def add_user():
     conn = None
+    cursor = None
+
     try:
-        data = request.json
-        fname = data.get('first_name')
-        lname = data.get('last_name')
-        mobile = data.get('mobile_number')
-        barangay = data.get('barangay')
-        street = data.get('street_name')
-        password = data.get('password')
-        pfp = data.get('profile_picture')
-        status = data.get('status')
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
+        mobile = str(data.get('mobile_number', '')).strip()
+        fname = data.get('first_name', '').strip()
+        lname = data.get('last_name', '').strip()
+
+        if not mobile or not fname or not lname:
+            return jsonify({"error": "Missing required fields"}), 400
 
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute(
-            "SELECT * FROM Users WHERE mobile_number = %s", (mobile,))
+            "SELECT mobile_number FROM Users WHERE mobile_number = %s", (mobile,))
         if cursor.fetchone():
             return jsonify({"error": "This mobile number is already registered!"}), 409
 
@@ -128,24 +132,37 @@ def add_user():
                     (mobile_number, first_name, last_name, barangay,
                      street_name, password, profile_picture, status)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'''
-        values = (mobile, fname, lname, barangay,
-                  street, password, pfp, status)
+        values = (mobile, fname, lname, data.get('barangay'),
+                  data.get('street_name'), data.get('password'),
+                  data.get('profile_picture'), data.get('status', 'active'))
+
         cursor.execute(sql_add, values)
         conn.commit()
         new_id = cursor.lastrowid
-        cursor.close()
+
         return jsonify({
             "message": "User added successfully",
             "user_id": new_id,
             "first_name": fname
         }), 201
+
     except Exception as err:
+        print(f"❌ addUser error: {err}")
         if conn:
             conn.rollback()
         return jsonify({"error": str(err)}), 500
+
     finally:
-        if conn and conn.is_connected():
-            conn.close()
+        if cursor:
+            try:
+                cursor.close()
+            except Exception as e:
+                print(f"⚠️ Error closing cursor: {e}")
+        if conn:
+            try:
+                conn.close()
+            except Exception as e:
+                print(f"⚠️ Error closing connection: {e}")
 
 
 @app.route('/logIn', methods=['POST'])
@@ -372,7 +389,6 @@ def confirm_order():
         conn = db_pool.get_connection()
         cursor = conn.cursor()
 
-        # 🔒 Validate & Lock stock
         for item in items:
             cursor.execute(
                 "SELECT stock FROM Products WHERE product_id = %s FOR UPDATE", (item['product_id'],))
@@ -381,7 +397,6 @@ def confirm_order():
                 conn.rollback()
                 return jsonify({"error": f"Not enough stock for product."}), 400
 
-        # 📦 Create order & order items
         cursor.execute(
             "INSERT INTO ORDERS (user_id, barangay, street_name, landmark, order_total, shipping_fee, status) VALUES (%s, %s, %s, %s, %s, %s, 'Pending')",
             (uid, address['barangay'], address['street'],
@@ -396,7 +411,6 @@ def confirm_order():
                  item['quantity'], item['price'])
             )
 
-        # 📉 Deduct stock & collect new values
         updated_products = []
         for item in items:
             cursor.execute("UPDATE Products SET stock = stock - %s WHERE product_id = %s",
@@ -407,22 +421,18 @@ def confirm_order():
             updated_products.append(
                 {'product_id': int(item['product_id']), 'stock': new_stock})
 
-        # 🗑️ Clear cart items from DB
         for item in items:
             cursor.execute(
                 "DELETE FROM cart_item WHERE user_id = %s AND product_id = %s", (uid, item['product_id']))
 
         conn.commit()
+
         print(
             f"✅ Order {new_order_id} committed. Stock updates: {updated_products}")
 
-        # 📡 EMIT REAL-TIME UPDATES
         try:
-            # 1. Notify THIS user's cart to refresh & clear
             socketio.emit('cart_updated', {'user_id': uid}, room=f'user_{uid}')
             print(f"📤 Emitted cart_updated to room user_{uid}")
-
-            # 2. Broadcast stock changes to ALL clients
             socketio.emit('stock_updated', {
                           'items': updated_products}, broadcast=True)
             print("📤 Emitted stock_updated globally")
@@ -531,7 +541,8 @@ def upload_pfp():
         save_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(save_path)
 
-        db_path = f"http://127.0.0.1:5000/pfp's/{filename}"
+        # ✅ FIX: Use dynamic host URL instead of hardcoded 127.0.0.1
+        db_path = f"{request.host_url.rstrip('/')}/pfp's/{filename}"
 
         conn = db_pool.get_connection()
         cursor = conn.cursor()
@@ -588,7 +599,6 @@ def get_orders():
             conn.close()
 
 
-# ── NEW: GET USER ADDRESSES ──
 @app.route('/get_user_addresses/<int:user_id>', methods=['GET'])
 def get_user_addresses(user_id):
     conn = None
@@ -638,14 +648,13 @@ def get_user_addresses(user_id):
             conn.close()
 
 
-# ── NEW: SAVE ADDRESS ──
 @app.route('/save_address', methods=['POST'])
 def save_address():
     conn = None
     try:
         data = request.json
         user_id = data.get('user_id')
-        position = data.get('position')  # 1, 2, 3, or null for auto-assign
+        position = data.get('position')
         barangay = data.get('barangay')
         street = data.get('street')
         landmark = data.get('landmark', '')
@@ -656,7 +665,6 @@ def save_address():
         conn = db_pool.get_connection()
         cursor = conn.cursor()
 
-        # Auto-assign position if not provided
         if position is None:
             cursor.execute(
                 "SELECT barangay, street_name, barangay_second, street_name_second, barangay_third, street_name_third FROM Users WHERE user_id = %s", (user_id,))
@@ -673,7 +681,6 @@ def save_address():
             else:
                 return jsonify({"error": "Maximum 3 addresses reached"}), 400
 
-        # Update DB based on position
         if position == 1:
             cursor.execute("UPDATE Users SET barangay = %s, street_name = %s, landmark = %s WHERE user_id = %s",
                            (barangay, street, landmark, user_id))
@@ -696,8 +703,6 @@ def save_address():
         if conn and conn.is_connected():
             conn.close()
 
-# ── REPLACE ONLY THIS ROUTE in your app.py ──
-
 
 @app.route('/delete_address', methods=['POST'])
 def delete_address():
@@ -710,7 +715,6 @@ def delete_address():
         if not user_id or position is None:
             return jsonify({"error": "Missing user_id or position"}), 400
 
-        # ✅ FIX: Block deletion of main address (position 1)
         if position == 1:
             return jsonify({"error": "Main address cannot be deleted, only edited."}), 403
 
@@ -752,7 +756,6 @@ def cancel_order():
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Verify order exists and belongs to user
         cursor.execute("""
             SELECT status, user_id FROM orders 
             WHERE order_id = %s
@@ -771,31 +774,26 @@ def cancel_order():
                 "error": f"Only 'Pending' orders can be cancelled (current: '{order_result['status']}')"
             }), 400
 
-        # ✅ Get order items BEFORE updating status (to know what stock to restore)
         cursor.execute("""
             SELECT product_id, quantity FROM order_items 
             WHERE order_id = %s
         """, (order_id,))
         order_items = cursor.fetchall()
 
-        # ✅ Update order status
         cursor.execute("""
             UPDATE orders 
             SET status = 'Cancelled'
             WHERE order_id = %s AND user_id = %s
         """, (order_id, user_id))
 
-        # ✅ Restore stock AND collect updated values for socket emit
         updated_products = []
         for item in order_items:
-            # Restore stock
             cursor.execute("""
                 UPDATE products 
                 SET stock = stock + %s 
                 WHERE product_id = %s
             """, (item['quantity'], item['product_id']))
 
-            # Get new stock value for real-time update
             cursor.execute(
                 "SELECT stock FROM products WHERE product_id = %s", (item['product_id'],))
             new_stock = cursor.fetchone()['stock']
@@ -809,7 +807,6 @@ def cancel_order():
         print(
             f"✅ Order {order_id} cancelled. Stock restored for {len(updated_products)} item(s)")
 
-        # 🚀 EMIT REAL-TIME STOCK UPDATE TO ALL CLIENTS
         try:
             socketio.emit('stock_updated', {
                 'items': updated_products,
@@ -838,16 +835,12 @@ def cancel_order():
 
 
 def restore_stock_for_order(order_id, db_pool):
-    """Add back quantities to products when an order is cancelled"""
     conn = None
     cursor = None
     try:
         conn = db_pool.get_connection()
-
-        # ✅ FIX: Use dictionary=True to access columns by name
         cursor = conn.cursor(dictionary=True)
 
-        # Get all items in this order
         cursor.execute("""
             SELECT product_id, quantity FROM order_items 
             WHERE order_id = %s
@@ -877,7 +870,7 @@ def restore_stock_for_order(order_id, db_pool):
     except Exception as e:
         print(f"❌ Stock restore error: {e}")
         import traceback
-        traceback.print_exc()  # 📌 Shows exact failing line
+        traceback.print_exc()
         if conn:
             conn.rollback()
     finally:
@@ -887,5 +880,167 @@ def restore_stock_for_order(order_id, db_pool):
             conn.close()
 
 
+@app.route('/addProduct', methods=['POST'])
+def add_product():
+    try:
+        data = request.json
+        product_name = data.get('product_name')
+        price = data.get('price')
+        stock = data.get('stock')
+        category = data.get('category')
+
+        connection = db_pool.get_connection()
+        cursor = connection.cursor()
+
+        query = """
+            INSERT INTO products
+            (
+                product_name,
+                price,
+                stock,
+                category
+            )
+            VALUES (%s, %s, %s, %s)
+        """
+
+        values = (product_name, price, stock, category)
+        cursor.execute(query, values)
+        connection.commit()
+        product_id = cursor.lastrowid
+        cursor.close()
+        connection.close()
+
+        return jsonify({
+            "message": "Product added successfully",
+            "product_id": product_id
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+PRODUCT_UPLOAD_FOLDER = os.path.join("public", "product_images")
+os.makedirs(PRODUCT_UPLOAD_FOLDER, exist_ok=True)
+
+
+@app.route("/product_images/<filename>")
+def serve_product_image(filename):
+    return send_from_directory(PRODUCT_UPLOAD_FOLDER, filename)
+
+
+@app.route("/upload_product_image", methods=["POST"])
+def upload_product_image():
+    conn = None
+    try:
+        product_id = request.form.get("product_id")
+        file = request.files.get("file")
+
+        if not product_id:
+            return jsonify({"error": "No product_id"}), 400
+        if not file:
+            return jsonify({"error": "No file"}), 400
+
+        filename = secure_filename(file.filename)
+        ext = os.path.splitext(filename)[1]
+        new_filename = f"product_{product_id}{ext}"
+        save_path = os.path.join(PRODUCT_UPLOAD_FOLDER, new_filename)
+        file.save(save_path)
+
+        # ✅ FIX: Use dynamic host + correct port (5000) instead of hardcoded 127.0.0.1:5001
+        image_url = f"{request.host_url.rstrip('/')}/product_images/{new_filename}"
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+        update_query = """
+            UPDATE products
+            SET image = %s
+            WHERE product_id = %s
+        """
+        cursor.execute(update_query, (image_url, product_id))
+        conn.commit()
+        print("ROWS UPDATED:", cursor.rowcount)
+        cursor.close()
+
+        return jsonify({
+            "message": "Image uploaded",
+            "image": image_url
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route("/updateOrderStatus/<int:order_id>", methods=["PUT"])
+def update_order_status(order_id):
+    conn = None
+    cursor = None
+    try:
+        data = request.json
+        status = data.get("status")
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+        query = """
+            UPDATE orders
+            SET status = %s
+            WHERE order_id = %s
+        """
+        cursor.execute(query, (status, order_id))
+        conn.commit()
+
+        return jsonify({"message": "Order status updated successfully"}), 200
+
+    except Exception as e:
+        print("UPDATE STATUS ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@app.route("/deleteOrder/<int:order_id>", methods=["DELETE"])
+def delete_order(order_id):
+    conn = None
+    cursor = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT order_id FROM orders WHERE order_id = %s", (order_id,))
+        if not cursor.fetchone():
+            return jsonify({"error": "Order not found"}), 404
+
+        cursor.execute(
+            "DELETE FROM order_items WHERE order_id = %s", (order_id,))
+        query = "DELETE FROM orders WHERE order_id = %s"
+        cursor.execute(query, (order_id,))
+        conn.commit()
+
+        return jsonify({
+            "message": "Order deleted successfully",
+            "order_id": order_id
+        }), 200
+
+    except Exception as e:
+        import traceback
+        print(f"❌ DELETE ERROR: {e}")
+        print(f"📋 Traceback: {traceback.format_exc()}")
+        if conn:
+            conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 if __name__ == '__main__':
+    # ✅ Ensure host='0.0.0.0' to accept connections from other devices
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)

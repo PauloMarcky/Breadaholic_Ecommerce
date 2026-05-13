@@ -78,7 +78,7 @@ export function Registration() {
     setErrorSignUp("");
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/addUser", {
+      const response = await fetch("http://192.168.1.102:5000/addUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,7 +101,8 @@ export function Registration() {
         localStorage.setItem('userName', data.first_name);
         navigate("/home");
       } else {
-        setErrorSignUp(data.message || "Mobile number already exists.");
+        // ✅ Check for "error" key that backend actually sends
+        setErrorSignUp(data.error || data.message || "An unexpected error occurred.");
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -114,7 +115,7 @@ export function Registration() {
     setLoginError("");
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/logIn", {
+      const response = await fetch("http://192.168.1.102:5000/logIn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -138,9 +139,8 @@ export function Registration() {
           navigate("/home");
         }
       } else {
-        // ✅ FIX: This else block was completely missing before!
-        // Wrong credentials (401, 404, etc.) were silently ignored.
-        setLoginError(data.message || "Invalid mobile number or password.");
+        // ✅ Check for "error" key that backend actually sends
+        setErrorSignUp(data.error || data.message || "An unexpected error occurred.");
       }
 
     } catch (error) {

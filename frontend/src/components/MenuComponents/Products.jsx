@@ -27,14 +27,14 @@ export function Products({ filters }) {
   // ✅ Memoized fetchCart
   const fetchCart = useCallback(() => {
     if (!currentUserId) return;
-    axios.get(`http://127.0.0.1:5000/view_cart/${currentUserId}`)
+    axios.get(`http://192.168.1.102:5000/view_cart/${currentUserId}`)
       .then(res => setCartItems(res.data))
       .catch(err => console.error("Cart Fetch Error:", err));
   }, [currentUserId]);
 
   // ✅ Fetch initial products
   useEffect(() => {
-    axios.get("http://127.0.0.1:5000/getProducts")
+    axios.get("http://192.168.1.102:5000/getProducts")
       .then(res => setAllProducts(res.data))
       .catch(err => console.error("Product Error:", err));
     fetchCart();
@@ -115,7 +115,7 @@ export function Products({ filters }) {
   useEffect(() => {
     const refetchAfterCheckout = () => {
       console.log('🔄 Checkout completed, refetching products...');
-      axios.get("http://127.0.0.1:5000/getProducts")
+      axios.get("http://192.168.1.102:5000/getProducts")
         .then(res => setAllProducts(res.data))
         .catch(err => console.error("Refetch Error:", err));
     };
@@ -164,7 +164,7 @@ export function Products({ filters }) {
     }
 
     // ✅ Cart API call (ALWAYS runs, regardless of animation)
-    axios.post("http://127.0.0.1:5000/add_to_cart", {
+    axios.post("http://192.168.1.102:5000/add_to_cart", {
       user_id: currentUserId,
       product_id: productId,
       quantity: finalQty

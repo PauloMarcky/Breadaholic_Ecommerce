@@ -23,7 +23,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
   const fetchSavedAddresses = async () => {
     setIsFetchingAddresses(true);
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/get_user_addresses/${userId}`);
+      const res = await axios.get(`http://192.168.1.102:5000/get_user_addresses/${userId}`);
       setSavedAddresses(res.data);
 
       if (res.data.length > 0) {
@@ -62,7 +62,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
     setIsLoading(true);
     setMessage({ text: "", type: "" });
     try {
-      const res = await axios.post("http://127.0.0.1:5000/confirm_order", orderData);
+      const res = await axios.post("http://192.168.1.102:5000/confirm_order", orderData);
       console.log("Server says:", res.data);
       setSelectedItems([]);
       setToastMessage({ text: res.data.message, type: "success" });

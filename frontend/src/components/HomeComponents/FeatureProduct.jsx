@@ -1,9 +1,15 @@
+// FeatureProduct.jsx
 import './FeatureProduct.css'
 import axios from 'axios';
 import { useEffect, useState } from 'react'
 
+// ✅ CONFIG: Use your PC's WiFi IP for API calls
+const API_BASE = 'http://192.168.1.102:5000'; // ← Change if your IP is different
+
 export function FeatureProduct() {
   const [featuredProductData, setFeaturedProductData] = useState([]);
+  const [loading, setLoading] = useState(true);   // ✅ Add loading state
+  const [error, setError] = useState(null);       // ✅ Add error state
   const [flyingItem, setFlyingItem] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const currentUserId = localStorage.getItem("currentUserId");
@@ -18,9 +24,18 @@ export function FeatureProduct() {
   };
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:5000/getFeatured")
-      .then(response => setFeaturedProductData(shuffleArray(response.data)))
-      .catch(error => console.log("Error Fetching: ", error));
+    // ✅ Use API_BASE instead of hardcoded localhost
+    axios.get(`${API_BASE}/getFeatured`)
+      .then(response => {
+        console.log("✅ Featured products loaded:", response.data);
+        setFeaturedProductData(shuffleArray(response.data));
+        setError(null);
+      })
+      .catch(error => {
+        console.error("❌ Fetch error:", error);
+        setError("Could not connect to server. Check WiFi & backend.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleAddToBasket = (productId, quantityProduct, e) => {
@@ -30,9 +45,8 @@ export function FeatureProduct() {
     }
 
     const finalQty = quantityProduct && quantityProduct > 0 ? quantityProduct : 1;
-    // Look for product-item specifically
     const productItem = e.target.closest('.product-item');
-    const productImg = productItem.querySelector('img');
+    const productImg = productItem?.querySelector('img');
     const cartIcon = document.getElementById('cart-icon');
 
     if (productImg && cartIcon) {
@@ -54,18 +68,52 @@ export function FeatureProduct() {
       }, 800);
     }
 
-    axios.post("http://127.0.0.1:5000/add_to_cart", {
+    axios.post(`${API_BASE}/add_to_cart`, {
       user_id: currentUserId,
       product_id: productId,
       quantity: finalQty
     })
-      .then(res => console.log("Server Response:", res.data))
+      .then(res => console.log("✅ Cart response:", res.data))
       .catch(err => {
-        console.error("Add Error:", err);
-        alert("Failed to add item.");
+        console.error("❌ Cart error:", err);
+        alert("Failed to add item. Check connection.");
       });
   };
 
+  // ✅ Loading state
+  if (loading) {
+    return (
+      <div className="section-wrap">
+        <p style={{ textAlign: 'center', padding: 40 }}>Loading featured products...</p>
+      </div>
+    );
+  }
+
+  // ✅ Error state
+  if (error) {
+    return (
+      <div className="section-wrap">
+        <p style={{ textAlign: 'center', padding: 40, color: '#dc3545' }}>
+          ⚠️ {error}<br />
+          <small>Make sure backend is running at {API_BASE}</small>
+        </p>
+      </div>
+    );
+  }
+
+  // ✅ Empty state
+  if (featuredProductData.length === 0) {
+    return (
+      <div className="section-wrap">
+        <p style={{ textAlign: 'center', padding: 40 }}>
+          No featured products found. <br />
+          <small>Check if products have <code>featured = TRUE</code> in database</small>
+        </p>
+      </div>
+    );
+  }
+
+  // ✅ Success: Render products
   return (
     <div className="section-wrap">
       {flyingItem && (
@@ -87,16 +135,14 @@ export function FeatureProduct() {
         <p className="section-sub-title">CURIOUS WHY? ORDER IT NOW</p>
 
         <div className="products-grid">
-          {featuredProductData && featuredProductData.map((product) => {
+          {featuredProductData.map((product) => {
             const isOutOfStock = product.stock === 0;
             return (
               <div
                 className={`product-card-container ${isOutOfStock ? 'is-out-of-stock' : ''}`}
                 key={product.product_id}
               >
-                {/* The card itself */}
                 <div className="product-item">
-                  {/* Stock Message Overlay */}
                   {isOutOfStock && <div className='out-stock-message'>OUT OF STOCK</div>}
 
                   <div className="product-placeholder">
@@ -109,7 +155,7 @@ export function FeatureProduct() {
                       disabled={isOutOfStock}
                       onClick={(e) => {
                         const qtyInput = e.target.parentNode.querySelector('input');
-                        handleAddToBasket(product.product_id, parseInt(qtyInput.value), e);
+                        handleAddToBasket(product.product_id, parseInt(qtyInput?.value || 1), e);
                       }}
                     >
                       {isOutOfStock ? "Sold Out" : "Add to Menu"}
