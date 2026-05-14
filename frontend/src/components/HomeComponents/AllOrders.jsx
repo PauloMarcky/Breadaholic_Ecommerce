@@ -1,27 +1,26 @@
+// AllOrders.jsx
 import './AllOrders.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { socket, connectSocket } from '../../utils/socket.js';
 
 export function AllOrders({ onCancel }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // ✅ NEW: Toast message state
   const [toastMessage, setToastMessage] = useState({ text: "", type: "" });
 
   const currentUserId = localStorage.getItem("currentUserId");
+  const listenersAttached = useRef(false);
 
-  // ✅ Auto-dismiss toast after 3 seconds
+  // ✅ Auto-dismiss toast
   useEffect(() => {
     if (toastMessage.text) {
-      const timer = setTimeout(() => {
-        setToastMessage({ text: "", type: "" });
-      }, 3000);
+      const timer = setTimeout(() => setToastMessage({ text: "", type: "" }), 3000);
       return () => clearTimeout(timer);
     }
   }, [toastMessage.text]);
 
-  // ✅ Helper: Fetch & filter user orders (DRY)
+  // ✅ Fetch user orders
   const fetchUserOrders = async () => {
     try {
       const res = await axios.get(`http://192.168.1.102:5000/getOrders`);
@@ -34,18 +33,51 @@ export function AllOrders({ onCancel }) {
     }
   };
 
+  // ✅ Initial fetch
   useEffect(() => {
     if (currentUserId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserOrders();
       setLoading(false);
     }
   }, [currentUserId]);
 
+  // ✅ NEW: Socket listener for real-time order status updates
+  useEffect(() => {
+    if (!currentUserId || listenersAttached.current) return;
+
+    console.log('🔌 Customer: Setting up order status listener for user', currentUserId);
+    connectSocket(currentUserId); // Ensures user is in user_{uid} room
+
+    const handleMyOrderStatusUpdated = (data) => {
+      console.log('🔄 Received order status update:', data);
+
+      // Update the specific order in state
+      setOrders(prev => prev.map(order =>
+        order.order_id === data.order_id
+          ? { ...order, status: data.new_status, updated_at: data.updated_at }
+          : order
+      ));
+
+      // Show toast notification
+      setToastMessage({
+        text: ` ${data.message || `Order #${data.order_id} is now ${data.new_status}`}`,
+        type: 'success'
+      });
+    };
+
+    socket.on('my_order_status_updated', handleMyOrderStatusUpdated);
+    listenersAttached.current = true;
+
+    // Cleanup on unmount
+    return () => {
+      socket.off('my_order_status_updated', handleMyOrderStatusUpdated);
+      listenersAttached.current = false;
+      console.log('🔌 Customer: Cleaned up order status listener');
+    };
+  }, [currentUserId]);
+
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) {
-      return;
-    }
+    if (!window.confirm("Cancel this order?")) return;
 
     try {
       const response = await axios.post("http://192.168.1.102:5000/cancel_order", {
@@ -53,34 +85,25 @@ export function AllOrders({ onCancel }) {
         user_id: currentUserId
       });
 
-      // ✅ Show success toast instead of alert
       setToastMessage({
-        text: response.data.message || "Order cancelled successfully! 🎉",
+        text: response.data.message || "Order cancelled successfully! ",
         type: "success"
       });
 
-      // 🔄 Refresh orders list
       await fetchUserOrders();
-
     } catch (err) {
       console.error("Cancel failed:", err);
       const errorMsg = err.response?.data?.error || "Failed to cancel order";
-
-      // ✅ Show error toast
       setToastMessage({ text: `❌ ${errorMsg}`, type: "error" });
     }
   };
 
   return (
     <>
-      {/* ✅ TOAST MESSAGE AT TOP */}
       {toastMessage.text && (
         <div className={`order-toast ${toastMessage.type}`}>
           <p>{toastMessage.text}</p>
-          <button
-            className="toast-close"
-            onClick={() => setToastMessage({ text: "", type: "" })}
-          >
+          <button className="toast-close" onClick={() => setToastMessage({ text: "", type: "" })}>
             &times;
           </button>
         </div>
@@ -98,8 +121,8 @@ export function AllOrders({ onCancel }) {
           ) : orders.length > 0 ? (
             orders.map((order) => (
               <div className="orders" key={order.order_id}>
-                <p className={`all-order-status ${order.status.toLowerCase()}`}>
-                  {order.status.toUpperCase()}
+                <p className={`all-order-status ${order.status?.toLowerCase() || 'pending'}`}>
+                  {(order.status || 'Pending').toUpperCase()}
                 </p>
 
                 <div className="order-id">
@@ -122,10 +145,7 @@ export function AllOrders({ onCancel }) {
 
                 <div className="cancel-btn-ord">
                   {order.status === 'Pending' && (
-                    <button
-                      className="cancel-order-btn"
-                      onClick={() => handleCancelOrder(order.order_id)}
-                    >
+                    <button className="cancel-order-btn" onClick={() => handleCancelOrder(order.order_id)}>
                       CANCEL ORDER
                     </button>
                   )}

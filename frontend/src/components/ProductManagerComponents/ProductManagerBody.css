@@ -1,4 +1,6 @@
-/* ─── Layout: Fixed Height + Scrollable Table ─── */
+/* ProductManagerBody.css */
+
+/* ─── Layout ─── */
 .pm-container {
   display: flex;
   flex-direction: column;
@@ -9,19 +11,57 @@
   background: var(--bg);
 }
 
-.pm-container>div {
+/* ─── Loading Overlay ─── */
+.pm-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  color: white;
+  font-size: 18px;
 }
 
-/* Fixed section: Header + Stats */
-.pm-fixed-section {
-  flex-shrink: 0;
-  margin-bottom: 16px;
+/* ─── Toast Notifications ─── */
+.pm-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  z-index: 1000;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.pm-toast.success {
+  background: #10b981;
+}
+
+.pm-toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ─── Header ─── */
 .pm-page-header {
   background: linear-gradient(135deg, var(--amber), var(--amber-lt));
   color: #fff;
@@ -41,141 +81,20 @@
   margin: 0;
 }
 
+/* ─── Stats ─── */
 .product-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  margin-bottom: 20px;
 }
 
-/* Scrollable table wrapper */
-.pm-table-scroll-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  border-radius: 12px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-
-/* Table styles */
-.table-wrapper {
-  background: var(--card);
-  border-radius: 12px;
-  border: none;
-  box-shadow: none;
-  overflow: visible;
-}
-
-.table-header {
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  background: var(--card);
-  z-index: 10;
-}
-
-.table-header h3 {
-  font-size: 15px;
-  color: var(--brown);
-  font-family: 'Playfair Display', serif;
-  margin: 0;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-thead {
-  position: sticky;
-  top: 0;
-  background: rgba(192, 122, 26, 0.06);
-  z-index: 5;
-}
-
-th {
-  padding: 11px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-
-td {
-  padding: 11px 14px;
-  font-size: 13.5px;
-  color: var(--text);
-  border-bottom: 1px solid var(--border);
-}
-
-.img-container-pm {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-tbody tr:last-child td {
-  border-bottom: none;
-}
-
-tbody tr:hover {
-  background: rgba(192, 122, 26, 0.04);
-}
-
-/* Product image */
-.product-table-image {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  background: var(--cream);
-  object-fit: cover;
-}
-
-/* Stock indicators */
-.stock-out {
-  color: #DC3545;
-  font-weight: 600;
-}
-
-.stock-low {
-  color: #FD7E14;
-  font-weight: 600;
-}
-
-.stock-ok {
-  color: var(--text);
-  font-weight: 600;
-}
-
-/* Action buttons */
-.action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 2px 6px;
-}
-
-.action-btn.delete {
-  color: #DC3545;
-}
-
-/* ─── Shared UI Components ─── */
 .pm-stat-card {
   background: var(--card);
   border-radius: 12px;
   padding: 18px 20px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  flex: 1;
 }
 
 .pm-stat-label {
@@ -210,6 +129,140 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+/* ─── Table Container (Matches .om-table-card) ─── */
+.pm-table-scroll-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  /* Contains scroll */
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* ─── Fixed Header (Stays at top, never scrolls) ─── */
+.table-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  /* ✅ CRITICAL: Keeps header pinned */
+  background: var(--card);
+}
+
+.table-header h3 {
+  font-size: 15px;
+  color: var(--brown);
+  font-family: 'Playfair Display', serif;
+  margin: 0;
+}
+
+/* ─── Scrollable Table Area ─── */
+.table-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ─── Sticky Table Head (Matches OrderManager exactly) ─── */
+thead {
+  position: sticky;
+  top: 0;
+  background: rgba(192, 122, 26, 0.06);
+  z-index: 5;
+}
+
+th {
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--border);
+  /* ✅ Solid bg hides scrolling rows */
+}
+
+/* ─── Table Rows ─── */
+td {
+  padding: 11px 14px;
+  font-size: 13.5px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: rgba(192, 122, 26, 0.04);
+}
+
+.cell-name {
+  font-weight: 600;
+}
+
+.cell-price {
+  color: var(--amber-dk);
+  font-weight: 600;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+}
+
+/* Stock indicators */
+.stock-out {
+  color: #DC3545;
+  font-weight: 600;
+}
+
+.stock-low {
+  color: #FD7E14;
+  font-weight: 600;
+}
+
+.stock-ok {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Action buttons */
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+}
+
+.action-btn.delete {
+  color: #DC3545;
+}
+
+/* ─── Buttons ─── */
 .pm-btn {
   padding: 8px 16px;
   border-radius: 8px;
@@ -236,40 +289,7 @@ tbody tr:hover {
   color: var(--brown);
 }
 
-/* Form */
-.pm-form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  flex: 1;
-}
-
-.pm-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pm-form-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-
-.pm-form-input,
-.pm-form-select {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--cream);
-  color: var(--brown);
-  font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-}
-
-/* ─── MODAL: Column Layout + Larger Image ─── */
+/* ─── Modal ─── */
 .pm-modal-overlay {
   position: fixed;
   inset: 0;
@@ -292,7 +312,6 @@ tbody tr:hover {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
-  /* ✅ Stack items vertically */
   gap: 20px;
 }
 
@@ -307,42 +326,25 @@ tbody tr:hover {
 .pm-modal-body {
   display: flex;
   flex-direction: column;
-  /* ✅ Column layout */
   align-items: center;
-  /* ✅ Center items */
   gap: 20px;
   width: 100%;
 }
 
-/* ✅ Larger image preview container */
-.pm-modal-preview {
-  width: 180px;
-  /* ✅ Increased from 110px */
-  height: 180px;
-  /* ✅ Increased from 110px */
-  min-width: 180px;
-  min-height: 180px;
-  background: var(--cream);
-  border-radius: 12px;
-  border: 3px dashed var(--border);
+.pm-modal-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 48px;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-/* ✅ Larger preview image */
-.pm-preview-image {
+  gap: 10px;
+  margin-top: 8px;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 10px;
 }
 
-/* Form row - full width now */
+.pm-modal-actions .pm-btn {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+/* ─── Form (Unified - No Duplicates) ─── */
 .pm-form-row {
   display: flex;
   flex-direction: column;
@@ -378,15 +380,149 @@ tbody tr:hover {
   box-sizing: border-box;
 }
 
-.pm-modal-actions {
+/* ─── Clickable Image Preview ─── */
+.pm-modal-preview {
+  width: 180px;
+  height: 180px;
+  min-width: 180px;
+  min-height: 180px;
+  background: var(--cream);
+  border-radius: 12px;
+  border: 3px dashed var(--border);
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
-  width: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 48px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  /* For overlay positioning */
+  cursor: pointer;
+  /* ✅ Shows clickable cursor */
+  transition: border-color 0.2s, transform 0.1s;
 }
 
-.pm-modal-actions .pm-btn {
-  flex: 1;
-  padding: 10px 16px;
-  font-size: 14px;
+/* ✅ Hover effect for clickable preview */
+.pm-modal-preview.clickable:hover {
+  border-color: var(--amber);
+  transform: scale(1.02);
 }
+
+.pm-modal-preview.clickable:active {
+  transform: scale(0.98);
+}
+
+/* Placeholder text styling */
+.pm-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 32px;
+  color: var(--muted);
+}
+
+.pm-preview-placeholder small {
+  font-size: 11px;
+  margin-top: 4px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Preview image fills container */
+.pm-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* ✅ Hover overlay - shows "✏️ Change" */
+.pm-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 5, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 12px;
+  pointer-events: none;
+  /* Let clicks pass through to parent */
+}
+
+.pm-modal-preview.clickable:hover .pm-preview-overlay {
+  opacity: 1;
+}
+
+/* ✅ Hidden file input - visually hidden but accessible */
+.pm-file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus style for accessibility */
+.pm-file-input-hidden:focus+.pm-modal-preview {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* ─── Ingredients Textarea ─── */
+.pm-form-textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--brown);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  /* ✅ Non-resizable */
+  min-height: 72px;
+  /* ✅ Fixed height */
+  max-height: 72px;
+  /* ✅ Prevent expansion */
+  line-height: 1.4;
+}
+
+.pm-form-textarea::placeholder {
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.pm-form-textarea:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(192, 122, 26, 0.15);
+}
+
+.pm-form-hint {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ─── Keep all your existing styles below ─── */
+/* (All your other .pm- styles remain unchanged) */
+
+/* ─── Keep existing styles below ─── */
+/* (All your other .pm- styles remain unchanged) */

@@ -109,10 +109,9 @@ export function Registration() {
       setErrorSignUp("Server connection failed. Please try again later.");
     }
   };
-
   const handleLogInSubmit = async (e) => {
     e.preventDefault();
-    setLoginError("");
+    setLoginError(""); // Clear previous errors
 
     try {
       const response = await fetch("http://192.168.1.102:5000/logIn", {
@@ -127,6 +126,7 @@ export function Registration() {
       const data = await response.json();
 
       if (response.ok) {
+        // ✅ Success: Save user data and navigate
         localStorage.setItem("currentUserId", data.user_id);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userName', data.first_name);
@@ -139,16 +139,16 @@ export function Registration() {
           navigate("/home");
         }
       } else {
-        // ✅ Check for "error" key that backend actually sends
-        setErrorSignUp(data.error || data.message || "An unexpected error occurred.");
+        // ✅ FIX: Use setLoginError (not setErrorSignUp) for login errors
+        setLoginError(data.error || data.message || "Invalid credentials");
       }
 
     } catch (error) {
       console.error("Login Error:", error);
+      // ✅ FIX: Use setLoginError for connection errors too
       setLoginError("Could not connect to the server.");
     }
-  }
-
+  };
   return (
     <div className={style.pageBg}>
       <div className={style.mainContainer}>
@@ -177,15 +177,13 @@ export function Registration() {
                   name="mobile"
                   onChange={handleLogInChange}
                   type="tel"
-                  placeholder="Mobile Number"
-                  required />
+                  placeholder="Mobile Number" />
                 <input
                   className={style.field}
                   name="password"
                   onChange={handleLogInChange}
                   type="password"
-                  placeholder="Password"
-                  required />
+                  placeholder="Password" />
                 {/* ✅ loginError now shows because the else block was added */}
                 {loginError && <p className={style.errorMessage}>{loginError}</p>}
                 <button className={style.btnPrimary} type="submit">Log In</button>
