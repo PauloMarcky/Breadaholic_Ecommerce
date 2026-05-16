@@ -56,7 +56,7 @@ function OrderManagerBody() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get('http://192.168.1.102:5000/getOrders');
+        const res = await axios.get('http://192.168.1.100:5000/getOrders');
         setOrders(res.data);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
@@ -86,7 +86,7 @@ function OrderManagerBody() {
       });
 
       // Refresh orders list to include new order
-      axios.get('http://192.168.1.102:5000/getOrders')
+      axios.get('http://192.168.1.100:5000/getOrders')
         .then(res => setOrders(res.data))
         .catch(err => console.error("Order sync error:", err));
 
@@ -133,7 +133,7 @@ function OrderManagerBody() {
   // ✅ Update order status (called when admin clicks button)
   const updateStatus = async (orderId, status) => {
     try {
-      await axios.put(`http://192.168.1.102:5000/updateOrderStatus/${orderId}`, { status });
+      await axios.put(`http://192.168.1.100:5000/updateOrderStatus/${orderId}`, { status });
 
       // Optimistic UI update (instant feedback)
       setOrders(prev => prev.map(o =>
@@ -152,7 +152,7 @@ function OrderManagerBody() {
     if (!window.confirm('Delete this order? This will permanently remove the record (stock NOT restored).')) return;
 
     try {
-      await axios.delete(`http://192.168.1.102:5000/deleteOrder/${orderId}`);
+      await axios.delete(`http://192.168.1.100:5000/deleteOrder/${orderId}`);
 
       // Remove from UI (backend already deleted + emitted update)
       setOrders(prev => prev.filter(o => o.order_id !== orderId));

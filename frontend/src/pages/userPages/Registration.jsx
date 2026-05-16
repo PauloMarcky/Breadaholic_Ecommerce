@@ -78,7 +78,7 @@ export function Registration() {
     setErrorSignUp("");
 
     try {
-      const response = await fetch("http://192.168.1.102:5000/addUser", {
+      const response = await fetch("http://192.168.1.100:5000/addUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,7 +114,7 @@ export function Registration() {
     setLoginError(""); // Clear previous errors
 
     try {
-      const response = await fetch("http://192.168.1.102:5000/logIn", {
+      const response = await fetch("http://192.168.1.100:5000/logIn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

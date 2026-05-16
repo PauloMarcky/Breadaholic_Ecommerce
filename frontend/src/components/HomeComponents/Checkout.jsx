@@ -2,10 +2,16 @@ import './Checkout.css'
 import axios from 'axios';
 import { useState, useEffect } from 'react'
 
-export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessage }) { // ✅ added setToastMessage
+const API_BASE = 'http://192.168.1.100:5000'; // ✅ Centralized API base
+
+export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessage }) {
   const productTotal = itemsToBuy.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const shippingFee = 50;
-  const grandTotal = productTotal + shippingFee;
+
+  // ✅ NEW: Dynamic shipping fee state
+  const [shippingFee, setShippingFee] = useState(50);
+  const [feeLoading, setFeeLoading] = useState(false);
+
+  const grandTotal = productTotal + shippingFee; // ✅ Auto-updates when shippingFee changes
 
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -16,14 +22,38 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
 
   const userId = localStorage.getItem("currentUserId");
 
+  // ✅ Fetch saved addresses on mount
   useEffect(() => {
     fetchSavedAddresses();
   }, []);
 
+  // ✅ NEW: Fetch dynamic shipping fee when barangay changes
+  useEffect(() => {
+    const fetchShippingFee = async () => {
+      if (!selectedAddress?.barangay) {
+        setShippingFee(50);
+        return;
+      }
+
+      setFeeLoading(true);
+      try {
+        const res = await axios.get(`${API_BASE}/shipping_fee/${encodeURIComponent(selectedAddress.barangay)}`);
+        setShippingFee(res.data.fee);
+      } catch (err) {
+        console.warn("Failed to fetch shipping fee, using default ₱50");
+        setShippingFee(50);
+      } finally {
+        setFeeLoading(false);
+      }
+    };
+
+    fetchShippingFee();
+  }, [selectedAddress?.barangay]); // 🔁 Re-run when barangay changes
+
   const fetchSavedAddresses = async () => {
     setIsFetchingAddresses(true);
     try {
-      const res = await axios.get(`http://192.168.1.102:5000/get_user_addresses/${userId}`);
+      const res = await axios.get(`${API_BASE}/get_user_addresses/${userId}`);
       setSavedAddresses(res.data);
 
       if (res.data.length > 0) {
@@ -48,10 +78,11 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
       return;
     }
 
+    // ✅ Frontend sends total for display; backend recalculates shipping_fee securely
     const orderData = {
       user_id: userId,
       items: itemsToBuy,
-      total_price: productTotal,
+      total_price: grandTotal, // ✅ Now includes dynamic shipping
       address: {
         barangay: selectedAddress.barangay,
         street: selectedAddress.street,
@@ -62,7 +93,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
     setIsLoading(true);
     setMessage({ text: "", type: "" });
     try {
-      const res = await axios.post("http://192.168.1.102:5000/confirm_order", orderData);
+      const res = await axios.post(`${API_BASE}/confirm_order`, orderData);
       console.log("Server says:", res.data);
       setSelectedItems([]);
       setToastMessage({ text: res.data.message, type: "success" });
@@ -90,7 +121,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
             <img src={item.image || "../src/assets/cart-item.jpg"} alt={item.product_name} />
             <div className="order-info">
               <h5>{item.product_name}</h5>
-              <h5>{item.price} Pesos</h5>
+              <h5>₱{item.price}</h5>
             </div>
             <p>Qty. {item.quantity}</p>
           </div>
@@ -143,14 +174,21 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
         </div>
       </div>
 
-      {/* PRICING */}
+      {/* ✅ UPDATED PRICING SECTION */}
       <div className="order-pricing">
         <div className="total-shipping">
-          <p>PRODUCT TOTAL: {productTotal} Pesos</p>
-          <p>SHIPPING FEE: {shippingFee} Pesos</p>
+          <p>PRODUCT TOTAL: ₱{productTotal.toFixed(2)}</p>
+          <p>
+            SHIPPING FEE ({selectedAddress?.barangay || 'Select area'}):
+            {feeLoading ? (
+              <span className="loading-fee"> Calculating...</span>
+            ) : (
+              <span> ₱{shippingFee.toFixed(2)}</span>
+            )}
+          </p>
         </div>
         <div className="total-price">
-          <p>TOTAL {grandTotal} Pesos</p>
+          <p>TOTAL: ₱{grandTotal.toFixed(2)}</p>
         </div>
       </div>
 
@@ -166,9 +204,9 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
         <button
           className="confirm"
           onClick={handleConfirmOrder}
-          disabled={isLoading || !selectedAddress}
+          disabled={isLoading || !selectedAddress || feeLoading}
         >
-          {isLoading ? "PLACING ORDER..." : "CONFIRM ORDER"}
+          {isLoading ? "PLACING ORDER..." : `CONFIRM ORDER • ₱${grandTotal.toFixed(2)}`}
         </button>
         <button className="cancel" onClick={onCancel} disabled={isLoading}>CANCEL</button>
       </div>

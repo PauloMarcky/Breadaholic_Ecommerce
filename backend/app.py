@@ -1,9 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from mysql.connector import pooling
 from werkzeug.utils import secure_filename
+from decimal import Decimal
+import json
 import os
 
 # ✅ FIXED: Proper Flask initialization
@@ -33,7 +35,63 @@ os.makedirs(PROFILE_UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PRODUCT_UPLOAD_FOLDER, exist_ok=True)
 
 
+# ✅ NEW: Helper to convert Decimal → float for JSON serialization
+def serialize_row(row):
+    """Convert MySQL row (dict or tuple) to JSON-serializable format"""
+    if row is None:
+        return None
+
+    # If it's already a dict (dictionary=True cursor), process each value
+    if isinstance(row, dict):
+        return {
+            key: (float(value) if isinstance(value, Decimal) else value)
+            for key, value in row.items()
+        }
+
+    # If it's a tuple (default cursor), return as-is (you should use dictionary=True)
+    return row
+
+# ✅ NEW: Helper for lists of rows (e.g., getProducts)
+
+
+def serialize_rows(rows):
+    """Convert list of MySQL rows to JSON-serializable format"""
+    return [serialize_row(row) for row in rows] if rows else []
+
+
+def get_date_ranges(period='monthly'):
+    """Generate date ranges for weekly/monthly reports"""
+    today = datetime.now()
+    ranges = []
+
+    if period == 'weekly':
+        # Last 8 weeks (including current)
+        for i in range(7, -1, -1):
+            end = today - timedelta(days=i*7)
+            start = end - timedelta(days=6)
+            ranges.append({
+                'label': f"Week {8-i}: {start.strftime('%b %d')}",
+                'start': start.date(),
+                'end': end.date()
+            })
+    else:  # monthly
+        # Last 12 months
+        for i in range(11, -1, -1):
+            month = today.month - i
+            year = today.year
+            if month <= 0:
+                month += 12
+                year -= 1
+            ranges.append({
+                'label': datetime(year, month, 1).strftime('%B %Y'),
+                'start': datetime(year, month, 1).date(),
+                'end': datetime(year, month + 1, 1).date() - timedelta(days=1) if month < 12 else datetime(year, 12, 31).date()
+            })
+
+    return ranges
+
 # ==================== SOCKETIO EVENT HANDLERS ====================
+
 
 @socketio.on('connect')
 def handle_connect():
@@ -204,10 +262,12 @@ def get_products():
     try:
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
-        # ✅ UPDATED: Select ingredients column
         cursor.execute(
             "SELECT product_id, product_name, price, stock, category, ingredients, image, featured FROM Products")
-        return jsonify(cursor.fetchall()), 200
+        products = cursor.fetchall()
+
+        # ✅ FIXED: Serialize Decimal fields before returning
+        return jsonify(serialize_rows(products)), 200
     except Exception as err:
         return jsonify({"error": str(err)}), 404
     finally:
@@ -323,6 +383,35 @@ def remove_from_cart():
             conn.close()
 
 
+@app.route('/shipping_fee/<barangay>', methods=['GET'])
+def get_shipping_fee(barangay):
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # ✅ Uses corrected table name
+        cursor.execute(
+            "SELECT rate_id, barangay_name, shipping_fee FROM shipping_price_list WHERE barangay_name = %s", (barangay,))
+        result = cursor.fetchone()
+
+        if result:
+            fee = float(result['shipping_fee'])
+        else:
+            fee = 50.00  # Fallback for unlisted barangays
+
+        return jsonify({
+            "barangay": barangay,
+            "fee": fee,
+            "rate_id": result['rate_id'] if result else None
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 @app.route('/confirm_order', methods=['POST'])
 def confirm_order():
     conn = None
@@ -332,13 +421,14 @@ def confirm_order():
         items = data.get('items')
         address = data.get('address')
         total_price = data.get('total_price')
-        shipping_fee = 50
+
+        if not all([uid, items, address, total_price is not None]):
+            return jsonify({"error": "Missing required order data"}), 400
 
         conn = db_pool.get_connection()
-        # ✅ Use dictionary=True for easier access
         cursor = conn.cursor(dictionary=True)
 
-        # ✅ Check stock first
+        # ✅ 1. Check stock availability (locking rows prevents race conditions)
         for item in items:
             cursor.execute(
                 "SELECT stock FROM Products WHERE product_id = %s FOR UPDATE",
@@ -349,15 +439,29 @@ def confirm_order():
                 conn.rollback()
                 return jsonify({"error": "Not enough stock for product."}), 400
 
-        # ✅ Create order
+        # ✅ 2. Dynamic Shipping Fee Lookup
+        user_barangay = address.get('barangay', '').strip()
+        shipping_fee = 50.00  # Default fallback
+
         cursor.execute(
-            "INSERT INTO ORDERS (user_id, barangay, street_name, landmark, order_total, shipping_fee, status) VALUES (%s, %s, %s, %s, %s, %s, 'Pending')",
-            (uid, address['barangay'], address['street'],
-             address['landmark'], total_price, shipping_fee)
+            "SELECT shipping_fee FROM shipping_price_list WHERE barangay_name = %s",
+            (user_barangay,)
+        )
+        fee_row = cursor.fetchone()
+        if fee_row:
+            shipping_fee = float(fee_row['shipping_fee'])  # Decimal → float
+
+        # ✅ 3. Create Order
+        cursor.execute(
+            """INSERT INTO ORDERS 
+               (user_id, barangay, street_name, landmark, order_total, shipping_fee, status) 
+               VALUES (%s, %s, %s, %s, %s, %s, 'Pending')""",
+            (uid, address.get('barangay'), address.get('street'),
+             address.get('landmark'), float(total_price), shipping_fee)
         )
         new_order_id = cursor.lastrowid
 
-        # ✅ Create order items
+        # ✅ 4. Create Order Items
         for item in items:
             cursor.execute(
                 "INSERT INTO ORDER_ITEMS (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
@@ -365,7 +469,7 @@ def confirm_order():
                  item['quantity'], item['price'])
             )
 
-        # ✅ Update stock
+        # ✅ 5. Update Stock & Track Changes for Real-Time UI
         updated_products = []
         for item in items:
             cursor.execute(
@@ -373,12 +477,16 @@ def confirm_order():
                 (item['quantity'], item['product_id'])
             )
             cursor.execute(
-                "SELECT stock FROM Products WHERE product_id = %s", (item['product_id'],))
+                "SELECT stock FROM Products WHERE product_id = %s", (
+                    item['product_id'],)
+            )
             new_stock = max(0, cursor.fetchone()['stock'])
-            updated_products.append(
-                {'product_id': int(item['product_id']), 'stock': new_stock})
+            updated_products.append({
+                'product_id': int(item['product_id']),
+                'stock': int(new_stock)
+            })
 
-        # ✅ Clear cart
+        # ✅ 6. Clear User Cart
         for item in items:
             cursor.execute(
                 "DELETE FROM cart_item WHERE user_id = %s AND product_id = %s",
@@ -387,22 +495,23 @@ def confirm_order():
 
         conn.commit()
 
-        # ✅ Get customer name for notification (FIX #2)
+        # ✅ 7. Get Customer Name for Notifications
         cursor.execute(
-            "SELECT first_name, last_name FROM Users WHERE user_id = %s", (uid,))
+            "SELECT first_name, last_name FROM Users WHERE user_id = %s", (
+                uid,)
+        )
         user = cursor.fetchone()
         customer_name = f"{user['first_name']} {user['last_name']}".strip(
         ) if user else "New Customer"
 
-        # ✅ Emit socket events (FIX #1: no try/except needed)
+        # ✅ 8. Emit Real-Time Events
         socketio.emit('cart_updated', {'user_id': uid}, room=f'user_{uid}')
         socketio.emit('stock_updated', {'items': updated_products})
-
-        # ✅ NEW: Notify admin panel
         socketio.emit('new_order_received', {
             'order_id': new_order_id,
-            'customer': customer_name,  # ✅ Now correctly fetched from DB
-            'total': total_price,
+            'customer': customer_name,
+            'total': float(total_price),
+            'shipping_fee': shipping_fee,
             'status': 'Pending',
             'timestamp': datetime.now().isoformat()
         })
@@ -410,7 +519,8 @@ def confirm_order():
         return jsonify({
             "status": "success",
             "order_id": new_order_id,
-            "message": "Order placed successfully!"
+            "message": "Order placed successfully!",
+            "shipping_fee": shipping_fee
         }), 201
 
     except Exception as e:
@@ -522,8 +632,6 @@ def get_orders():
         if conn:
             conn.close()
 
-# ✅ NEW: Update product route (was missing)
-
 
 @app.route('/updateProduct', methods=['POST'])
 def update_product():
@@ -535,9 +643,8 @@ def update_product():
             return jsonify({"error": "Product ID required"}), 400
 
         conn = db_pool.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        # ✅ UPDATED: Include ingredients in UPDATE
         cursor.execute("""
             UPDATE Products 
             SET product_name=%s, price=%s, stock=%s, category=%s, ingredients=%s 
@@ -547,18 +654,30 @@ def update_product():
             data.get('price'),
             data.get('stock'),
             data.get('category'),
-            data.get('ingredients', ''),  # ✅ NEW
+            data.get('ingredients', ''),
             product_id
         ))
         conn.commit()
 
+        # ✅ Fetch updated product
+        cursor.execute(
+            "SELECT product_id, product_name, price, stock, category, ingredients, image, featured FROM Products WHERE product_id = %s",
+            (product_id,)
+        )
+        updated_product = cursor.fetchone()
+
+        # ✅ FIXED: Serialize before emitting via Socket.IO
         socketio.emit('products_updated', {
             'action': 'updated',
-            'product_id': product_id
+            'product_id': product_id,
+            # ← Convert Decimal!
+            'product_data': serialize_row(updated_product)
         })
 
         return jsonify({"message": "Product updated successfully"}), 200
+
     except Exception as e:
+        print(f"❌ updateProduct error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -575,42 +694,41 @@ def delete_product():
             return jsonify({"error": "Product ID required"}), 400
 
         conn = db_pool.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)  # ✅ dictionary=True
 
         # Optional: Delete product image file
         cursor.execute(
             "SELECT image FROM Products WHERE product_id = %s", (product_id,))
         result = cursor.fetchone()
-        if result and result[0]:
+        if result and result.get('image'):  # ✅ Safe dict access
             try:
-                image_filename = result[0].split('/product_images/')[-1]
+                image_filename = result['image'].split('/product_images/')[-1]
                 image_path = os.path.join(
                     PRODUCT_UPLOAD_FOLDER, image_filename)
                 if os.path.exists(image_path):
                     os.remove(image_path)
             except:
-                pass  # Ignore file deletion errors
+                pass
 
-        # Attempt to delete the product
         cursor.execute(
             "DELETE FROM Products WHERE product_id = %s", (product_id,))
         conn.commit()
 
+        # ✅ Emit delete event with product_id for frontend to remove from state
         socketio.emit('products_updated', {
-                      'action': 'deleted', 'product_id': product_id})
+            'action': 'deleted',
+            'product_id': product_id
+        })
+
         return jsonify({"message": "Product deleted successfully"}), 200
 
     except Exception as e:
         if conn:
             conn.rollback()
-
-        # ✅ Catch MySQL Foreign Key Constraint Error (Error 1451)
         if "1451" in str(e) or "foreign key constraint" in str(e).lower():
             return jsonify({
                 "error": "Cannot delete product. It has existing orders. Set stock to 0 instead."
-            }), 409  # 409 = Conflict
-
-        # Handle other unexpected errors
+            }), 409
         print(f"❌ deleteProduct error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
@@ -847,20 +965,19 @@ def add_product():
         if not data:
             return jsonify({"error": "Request body is required"}), 400
 
-        # ✅ Validate required fields
         product_name = data.get('product_name')
         price = data.get('price')
         stock = data.get('stock')
         category = data.get('category')
-        ingredients = data.get('ingredients', '')  # ✅ NEW: Optional field
+        ingredients = data.get('ingredients', '')
 
         if not all([product_name, price is not None, stock is not None, category]):
             return jsonify({"error": "Missing required fields: product_name, price, stock, category"}), 400
 
         conn = db_pool.get_connection()
-        cursor = conn.cursor()
+        # ✅ FIXED: Use dictionary=True
+        cursor = conn.cursor(dictionary=True)
 
-        # ✅ UPDATED: Include ingredients column in INSERT
         query = """
             INSERT INTO Products (product_name, price, stock, category, ingredients)
             VALUES (%s, %s, %s, %s, %s)
@@ -872,10 +989,17 @@ def add_product():
 
         product_id = cursor.lastrowid
 
-        # ✅ Notify clients of new product
+        # ✅ FIXED: SELECT new product WITH dictionary cursor
+        cursor.execute(
+            "SELECT product_id, product_name, price, stock, category, ingredients, image, featured FROM Products WHERE product_id = %s",
+            (product_id,)
+        )
+        new_product = cursor.fetchone()
+
         socketio.emit('products_updated', {
             'action': 'added',
-            'product_id': product_id
+            'product_id': product_id,
+            'product_data': serialize_row(new_product)  # ← Convert Decimal!
         })
 
         return jsonify({
@@ -884,18 +1008,15 @@ def add_product():
         }), 201
 
     except Exception as e:
-        # ✅ Log the actual error for debugging
         print(f"❌ addProduct error: {e}")
         import traceback
         traceback.print_exc()
-
         if conn:
             conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
             conn.close()
-# ✅ FIXED: Product image serving route - uses correct folder
 
 
 @app.route("/product_images/<filename>")
@@ -911,20 +1032,47 @@ def upload_product_image():
         file = request.files.get("file")
         if not product_id or not file:
             return jsonify({"error": "Missing data"}), 400
+
         ext = os.path.splitext(secure_filename(file.filename))[1]
         filename = f"product_{product_id}{ext}"
-        # ✅ FIXED: Save to PRODUCT_UPLOAD_FOLDER
         save_path = os.path.join(PRODUCT_UPLOAD_FOLDER, filename)
         file.save(save_path)
-        # ✅ FIXED: Dynamic host URL for cross-device access
+
         image_url = f"{request.host_url.rstrip('/')}/product_images/{filename}"
+
         conn = db_pool.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)  # ✅ Ensure dictionary mode
+
         cursor.execute(
-            "UPDATE Products SET image=%s WHERE product_id=%s", (image_url, product_id))
+            "UPDATE Products SET image=%s WHERE product_id=%s",
+            (image_url, product_id)
+        )
         conn.commit()
-        return jsonify({"image": image_url}), 200
+
+        # ✅ FIXED: Fetch full product and serialize before returning
+        cursor.execute(
+            "SELECT product_id, product_name, price, stock, category, ingredients, image, featured FROM Products WHERE product_id = %s",
+            (product_id,)
+        )
+        updated_product = cursor.fetchone()
+
+        # ✅ Emit real-time update with serialized data
+        socketio.emit('products_updated', {
+            'action': 'updated',
+            'product_id': product_id,
+            # ← This fixes the error!
+            'product_data': serialize_row(updated_product)
+        })
+
+        # ✅ Return serialized response
+        return jsonify({
+            "image": image_url,
+            # ← Optional: if frontend needs it
+            "product": serialize_row(updated_product)
+        }), 200
+
     except Exception as e:
+        print(f"❌ upload_product_image error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -1086,6 +1234,200 @@ def delete_order(order_id):
         if cursor:
             cursor.close()
         if conn and conn.is_connected():
+            conn.close()
+
+
+@app.route('/sales_report/summary', methods=['GET'])
+def get_sales_summary():
+    conn = None
+    try:
+        period = request.args.get('period', 'monthly')  # 'weekly' or 'monthly'
+        date_ranges = get_date_ranges(period)
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        results = []
+        for range_data in date_ranges:
+            cursor.execute("""
+                SELECT 
+                    COUNT(DISTINCT o.order_id) as order_count,
+                    SUM(o.order_total) as gross_revenue,
+                    SUM(o.shipping_fee) as total_shipping,
+                    SUM(oi.quantity) as items_sold
+                FROM ORDERS o
+                LEFT JOIN ORDER_ITEMS oi ON o.order_id = oi.order_id
+                WHERE o.status = 'Completed'  -- Only count completed orders
+                AND DATE(o.created_at) BETWEEN %s AND %s
+            """, (range_data['start'], range_data['end']))
+
+            row = cursor.fetchone()
+            results.append({
+                'period': range_data['label'],
+                'start_date': range_data['start'].isoformat(),
+                'end_date': range_data['end'].isoformat(),
+                'order_count': row['order_count'] or 0,
+                'gross_revenue': float(row['gross_revenue'] or 0),
+                'net_revenue': float((row['gross_revenue'] or 0) - (row['total_shipping'] or 0)),
+                'total_shipping': float(row['total_shipping'] or 0),
+                'items_sold': row['items_sold'] or 0
+            })
+
+        return jsonify({
+            'period': period,
+            'data': results,
+            'generated_at': datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Sales summary error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/sales_report/products', methods=['GET'])
+def get_product_sales():
+    conn = None
+    try:
+        period = request.args.get('period', 'monthly')
+        # Optional: filter by single product
+        product_id = request.args.get('product_id')
+        date_ranges = get_date_ranges(period)
+
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        results = []
+        for range_data in date_ranges:
+            # Base query for all products
+            query = """
+                SELECT 
+                    p.product_id,
+                    p.product_name,
+                    p.category,
+                    SUM(oi.quantity) as total_sold,
+                    SUM(oi.quantity * oi.price) as revenue,
+                    COUNT(DISTINCT o.order_id) as order_count
+                FROM ORDER_ITEMS oi
+                JOIN Products p ON oi.product_id = p.product_id
+                JOIN ORDERS o ON oi.order_id = o.order_id
+                WHERE o.status = 'Completed'
+                AND DATE(o.created_at) BETWEEN %s AND %s
+            """
+            params = [range_data['start'], range_data['end']]
+
+            if product_id:
+                query += " AND p.product_id = %s"
+                params.append(product_id)
+
+            query += " GROUP BY p.product_id, p.product_name, p.category ORDER BY revenue DESC"
+
+            cursor.execute(query, tuple(params))
+            products = cursor.fetchall()
+
+            results.append({
+                'period': range_data['label'],
+                'products': [
+                    {
+                        'product_id': p['product_id'],
+                        'product_name': p['product_name'],
+                        'category': p['category'],
+                        'total_sold': p['total_sold'] or 0,
+                        'revenue': float(p['revenue'] or 0),
+                        'order_count': p['order_count'] or 0,
+                        'avg_price': float((p['revenue'] or 0) / p['total_sold']) if p['total_sold'] else 0
+                    }
+                    for p in products
+                ]
+            })
+
+        return jsonify({
+            'period': period,
+            'product_id_filter': product_id,
+            'data': results,
+            'generated_at': datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Product sales error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/sales_report/stats', methods=['GET'])
+def get_sales_stats():
+    """Quick KPIs for dashboard cards"""
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Today's stats
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as orders_today,
+                SUM(order_total) as revenue_today
+            FROM ORDERS 
+            WHERE status = 'Completed' 
+            AND DATE(created_at) = CURDATE()
+        """)
+        today = cursor.fetchone()
+
+        # This month stats
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as orders_month,
+                SUM(order_total) as revenue_month
+            FROM ORDERS 
+            WHERE status = 'Completed' 
+            AND MONTH(created_at) = MONTH(CURDATE())
+            AND YEAR(created_at) = YEAR(CURDATE())
+        """)
+        month = cursor.fetchone()
+
+        # Top 5 products this month
+        cursor.execute("""
+            SELECT 
+                p.product_name,
+                SUM(oi.quantity) as total_sold,
+                SUM(oi.quantity * oi.price) as revenue
+            FROM ORDER_ITEMS oi
+            JOIN Products p ON oi.product_id = p.product_id
+            JOIN ORDERS o ON oi.order_id = o.order_id
+            WHERE o.status = 'Completed'
+            AND MONTH(o.created_at) = MONTH(CURDATE())
+            AND YEAR(o.created_at) = YEAR(CURDATE())
+            GROUP BY p.product_id
+            ORDER BY revenue DESC
+            LIMIT 5
+        """)
+        top_products = cursor.fetchall()
+
+        return jsonify({
+            'today': {
+                'orders': today['orders_today'] or 0,
+                'revenue': float(today['revenue_today'] or 0)
+            },
+            'this_month': {
+                'orders': month['orders_month'] or 0,
+                'revenue': float(month['revenue_month'] or 0)
+            },
+            'top_products': [
+                {
+                    'name': p['product_name'],
+                    'sold': p['total_sold'],
+                    'revenue': float(p['revenue'])
+                } for p in top_products
+            ]
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
             conn.close()
 
 

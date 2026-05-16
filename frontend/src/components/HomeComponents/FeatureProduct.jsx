@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react'
 
 // ✅ CONFIG: Use your PC's WiFi IP for API calls
-const API_BASE = 'http://192.168.1.102:5000'; // ← Change if your IP is different
+const API_BASE = 'http://192.168.1.100:5000'; // ← Change if your IP is different
 
 export function FeatureProduct() {
   const [featuredProductData, setFeaturedProductData] = useState([]);

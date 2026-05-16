@@ -4,7 +4,7 @@ import { socket, connectSocket } from '../../utils/socket.js';
 import { ProductSidebar } from '../MenuComponents/ProductSidebar';
 import './Products.css';
 
-const API_BASE = 'http://192.168.1.102:5000'; // Update if your IP changes
+const API_BASE = 'http://192.168.1.100:5000'; // Update if your IP changes
 
 export function Products({ filters }) {
   const [AllProducts, setAllProducts] = useState([]);

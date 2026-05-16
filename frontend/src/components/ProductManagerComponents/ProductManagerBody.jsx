@@ -1,9 +1,19 @@
 // ProductManagerBody.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client'; // ✅ NEW: Import socket.io-client
 import './ProductManagerBody.css';
 
-const API_BASE = 'http://192.168.1.102:5000';
+const API_BASE = 'http://192.168.1.100:5000';
+const SOCKET_BASE = 'http://192.168.1.100:5000'; // ✅ NEW: Socket server URL
+
+// ✅ NEW: Initialize socket connection (outside component to avoid re-creation)
+const socket = io(SOCKET_BASE, {
+  transports: ['websocket', 'polling'],
+  autoConnect: true,
+  reconnection: true,
+  reconnectionAttempts: 5
+});
 
 const PageHeader = ({ title, children }) => (
   <div className="pm-page-header"><h1>{title}</h1>{children}</div>
@@ -30,7 +40,7 @@ const ProductModal = ({ product, onSave, onClose }) => {
         price: product.price || '',
         stock: product.stock || '',
         category: product.category || 'Bread',
-        ingredients: product.ingredients || '', // ✅ NEW: Ingredients field
+        ingredients: product.ingredients || '',
         image: product.image || '',
         imageFile: null
       };
@@ -41,7 +51,7 @@ const ProductModal = ({ product, onSave, onClose }) => {
       price: '',
       stock: '',
       category: 'Bread',
-      ingredients: '', // ✅ NEW: Default empty
+      ingredients: '',
       image: '',
       imageFile: null
     };
@@ -83,13 +93,7 @@ const ProductModal = ({ product, onSave, onClose }) => {
       <div className="pm-modal-content" onClick={e => e.stopPropagation()}>
         <h2>{form.product_id ? 'Edit Product' : 'Add New Product'}</h2>
         <div className="pm-modal-body">
-
-          {/* ✅ Clickable Image Preview */}
-          <div
-            className="pm-modal-preview clickable"
-            onClick={handlePreviewClick}
-            title="Click to change image"
-          >
+          <div className="pm-modal-preview clickable" onClick={handlePreviewClick} title="Click to change image">
             {form.image ? (
               <img src={form.image} alt="preview" className="pm-preview-image" />
             ) : (
@@ -100,14 +104,7 @@ const ProductModal = ({ product, onSave, onClose }) => {
             </div>
           </div>
 
-          {/* ✅ Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="pm-file-input-hidden"
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="pm-file-input-hidden" />
 
           <div className="pm-form-row">
             <div className="pm-form-group">
@@ -130,17 +127,9 @@ const ProductModal = ({ product, onSave, onClose }) => {
                 <option>Tea</option>
               </select>
             </div>
-
-            {/* ✅ NEW: Ingredients Textarea */}
             <div className="pm-form-group">
               <label className="pm-form-label">Ingredients</label>
-              <textarea
-                value={form.ingredients}
-                onChange={set('ingredients')}
-                placeholder="Separate them by comma"
-                className="pm-form-textarea"
-                rows="3"
-              />
+              <textarea value={form.ingredients} onChange={set('ingredients')} placeholder="Separate them by comma" className="pm-form-textarea" rows="3" />
               <small className="pm-form-hint">Example: flour, sugar, eggs, butter</small>
             </div>
           </div>
@@ -160,6 +149,7 @@ export default function ProductManagerBody() {
   const [modal, setModal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [isSocketConnected, setIsSocketConnected] = useState(false); // ✅ NEW: Track socket connection
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -176,21 +166,91 @@ export default function ProductManagerBody() {
     }
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  // ✅ NEW: Socket.IO event listener for real-time product updates
+  useEffect(() => {
+    // Handle connection status
+    const handleConnect = () => {
+      console.log('✅ Socket connected');
+      setIsSocketConnected(true);
+    };
+
+    const handleDisconnect = () => {
+      console.log('❌ Socket disconnected');
+      setIsSocketConnected(false);
+    };
+
+    const handleProductsUpdated = (data) => {
+      console.log('🔄 Product update received:', data);
+
+      setProducts(prevProducts => {
+        switch (data.action) {
+          case 'added':
+            // ✅ Now we have full product data - just add it!
+            if (data.product_data) {
+              return [...prevProducts, data.product_data];
+            }
+            // Fallback: re-fetch if data missing
+            fetchProducts();
+            return prevProducts;
+
+          case 'updated':
+            // ✅ Replace the updated product with fresh data
+            if (data.product_data) {
+              return prevProducts.map(p =>
+                p.product_id === data.product_id ? data.product_data : p
+              );
+            }
+            return prevProducts;
+
+          case 'deleted':
+            // ✅ Remove by product_id
+            return prevProducts.filter(p => p.product_id !== data.product_id);
+
+          default:
+            return prevProducts;
+        }
+      });
+
+      // Show subtle notification
+      const actionText = {
+        added: '✨ Product added',
+        updated: '✏️ Product updated',
+        deleted: '🗑️ Product deleted'
+      }[data.action] || '🔄 Products updated';
+
+      showToast(actionText, 'success');
+    };
+
+    // Register event listeners
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('products_updated', handleProductsUpdated);
+
+    // Initial fetch
+    fetchProducts();
+
+    // Cleanup on unmount
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('products_updated', handleProductsUpdated);
+    };
+  }, []); // Empty dependency array = run once on mount
 
   const handleSave = async (form) => {
     setLoading(true);
     try {
       if (form.product_id) {
-        // ✅ Include ingredients in update payload
+        // UPDATE existing product
         await axios.post(`${API_BASE}/updateProduct`, {
           product_id: form.product_id,
           product_name: form.product_name,
           price: Number(form.price),
           stock: Number(form.stock),
           category: form.category,
-          ingredients: form.ingredients // ✅ NEW
+          ingredients: form.ingredients
         });
+
         if (form.imageFile) {
           const fd = new FormData();
           fd.append("product_id", form.product_id);
@@ -200,19 +260,20 @@ export default function ProductManagerBody() {
           });
         }
         showToast("Product updated successfully!");
+
       } else {
-        // ✅ Include ingredients in add payload
+        // ADD new product
         const res = await axios.post(`${API_BASE}/addProduct`, {
           product_name: form.product_name,
           price: Number(form.price),
           stock: Number(form.stock),
           category: form.category,
-          ingredients: form.ingredients // ✅ NEW
+          ingredients: form.ingredients
         });
-        const product_id = res.data.product_id;
+
         if (form.imageFile) {
           const fd = new FormData();
-          fd.append("product_id", product_id);
+          fd.append("product_id", res.data.product_id);
           fd.append("file", form.imageFile);
           await axios.post(`${API_BASE}/upload_product_image`, fd, {
             headers: { "Content-Type": "multipart/form-data" }
@@ -220,8 +281,14 @@ export default function ProductManagerBody() {
         }
         showToast("Product added successfully!");
       }
-      await fetchProducts();
+
+      // ✅ NOTE: We no longer call fetchProducts() here!
+      // The socket event will trigger the update automatically.
+      // But for safety (in case socket fails), we keep a fallback:
+      setTimeout(() => fetchProducts(), 1000);
+
       setModal(null);
+
     } catch (err) {
       console.error("Save Error:", err);
       if (err.response?.status >= 400) {
@@ -231,6 +298,7 @@ export default function ProductManagerBody() {
       setLoading(false);
     }
   };
+
   const handleDelete = async (product_id) => {
     if (!window.confirm("Delete this product?")) return;
 
@@ -238,10 +306,10 @@ export default function ProductManagerBody() {
     try {
       await axios.post(`${API_BASE}/deleteProduct`, { product_id });
       showToast("Product deleted successfully!", "success");
-      await fetchProducts();
+      // ✅ Socket event will handle UI update, but keep fallback
+      setTimeout(() => fetchProducts(), 1000);
     } catch (err) {
       console.error("Delete Error:", err);
-      // ✅ Show the custom backend error message
       if (err.response?.status === 409) {
         showToast(err.response?.data?.error, "error");
       } else {
@@ -251,6 +319,7 @@ export default function ProductManagerBody() {
       setLoading(false);
     }
   };
+
   return (
     <div className="pm-container">
       {toast.show && (
@@ -265,6 +334,22 @@ export default function ProductManagerBody() {
         </div>
       )}
 
+      {/* ✅ NEW: Connection status indicator */}
+      <div style={{
+        position: 'fixed',
+        top: 10,
+        right: 10,
+        padding: '4px 12px',
+        borderRadius: 20,
+        fontSize: 11,
+        background: isSocketConnected ? '#10b981' : '#ef4444',
+        color: 'white',
+        zIndex: 1000,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        {isSocketConnected ? '🟢 Live' : '🔴 Offline'}
+      </div>
+
       {modal && <ProductModal product={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
 
       <PageHeader title="Product Management" />
@@ -272,7 +357,7 @@ export default function ProductManagerBody() {
       <div className="product-stats">
         <StatCard label="Out of Stock" value={products.filter(p => p.stock <= 0).length} sub="Unavailable" />
         <StatCard label="Total Products" value={products.length} sub="In catalog" />
-        <StatCard label="Database" value="Synced" sub="Live" color="var(--amber)" />
+        <StatCard label="Database" value={isSocketConnected ? "Live Sync" : "Synced"} sub={isSocketConnected ? "Real-time" : "Manual"} color={isSocketConnected ? "var(--amber)" : "#6b7280"} />
       </div>
 
       <div className="pm-table-scroll-wrapper">
