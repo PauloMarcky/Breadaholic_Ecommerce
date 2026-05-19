@@ -143,3 +143,30 @@
   background: #E8E8E8;
   color: #555;
 }
+
+/* ✅ Online/Offline Badge Styles */
+.um-badge-online {
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #a7f3d0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.um-badge-offline {
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

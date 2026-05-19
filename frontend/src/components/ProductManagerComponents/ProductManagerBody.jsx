@@ -1,13 +1,13 @@
 // ProductManagerBody.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client'; // ✅ NEW: Import socket.io-client
+import { io } from 'socket.io-client';
 import './ProductManagerBody.css';
 
-const API_BASE = 'http://192.168.1.100:5000';
-const SOCKET_BASE = 'http://192.168.1.100:5000'; // ✅ NEW: Socket server URL
+const API_BASE = 'http://localhost:5000';
+const SOCKET_BASE = 'http://localhost:5000';
 
-// ✅ NEW: Initialize socket connection (outside component to avoid re-creation)
+// ✅ Socket connection (outside component)
 const socket = io(SOCKET_BASE, {
   transports: ['websocket', 'polling'],
   autoConnect: true,
@@ -31,7 +31,7 @@ const Btn = ({ children, onClick, variant = 'primary', style: s = {}, disabled }
   <button onClick={onClick} disabled={disabled} className={`pm-btn pm-btn-${variant}`} style={s}>{children}</button>
 );
 
-const ProductModal = ({ product, onSave, onClose }) => {
+const ProductModal = ({ product, onSave, onClose, showToast }) => {
   const [form, setForm] = useState(() => {
     if (product) {
       return {
@@ -65,11 +65,11 @@ const ProductModal = ({ product, onSave, onClose }) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        showToast('Please select an image file', 'error');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
+        showToast('Image must be less than 5MB', 'error');
         return;
       }
       const reader = new FileReader();
@@ -144,12 +144,42 @@ const ProductModal = ({ product, onSave, onClose }) => {
   );
 };
 
+// ✅ NEW: Confirmation Modal Component
+const ConfirmModal = ({ show, title, message, confirmText = "Confirm", cancelText = "Cancel", onConfirm, onCancel, variant = "danger" }) => {
+  if (!show) return null;
+
+  return (
+    <div className="pm-confirm-overlay" onClick={onCancel}>
+      <div className="pm-confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <h3>{title}</h3>
+        <p>{message}</p>
+        <div className="pm-confirm-actions">
+          <button className="pm-confirm-btn pm-confirm-btn-secondary" onClick={onCancel}>
+            {cancelText}
+          </button>
+          <button className={`pm-confirm-btn pm-confirm-btn-${variant}`} onClick={onConfirm}>
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ProductManagerBody() {
   const [products, setProducts] = useState([]);
   const [modal, setModal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [isSocketConnected, setIsSocketConnected] = useState(false); // ✅ NEW: Track socket connection
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+
+  // ✅ NEW: Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    productId: null,
+    productName: '',
+    action: null // 'delete' or other actions
+  });
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -166,9 +196,8 @@ export default function ProductManagerBody() {
     }
   };
 
-  // ✅ NEW: Socket.IO event listener for real-time product updates
+  // ✅ Socket.IO event listener
   useEffect(() => {
-    // Handle connection status
     const handleConnect = () => {
       console.log('✅ Socket connected');
       setIsSocketConnected(true);
@@ -185,16 +214,13 @@ export default function ProductManagerBody() {
       setProducts(prevProducts => {
         switch (data.action) {
           case 'added':
-            // ✅ Now we have full product data - just add it!
             if (data.product_data) {
               return [...prevProducts, data.product_data];
             }
-            // Fallback: re-fetch if data missing
             fetchProducts();
             return prevProducts;
 
           case 'updated':
-            // ✅ Replace the updated product with fresh data
             if (data.product_data) {
               return prevProducts.map(p =>
                 p.product_id === data.product_id ? data.product_data : p
@@ -203,7 +229,6 @@ export default function ProductManagerBody() {
             return prevProducts;
 
           case 'deleted':
-            // ✅ Remove by product_id
             return prevProducts.filter(p => p.product_id !== data.product_id);
 
           default:
@@ -211,37 +236,37 @@ export default function ProductManagerBody() {
         }
       });
 
-      // Show subtle notification
       const actionText = {
-        added: '✨ Product added',
-        updated: '✏️ Product updated',
-        deleted: '🗑️ Product deleted'
-      }[data.action] || '🔄 Products updated';
+        added: 'Product added',
+        updated: 'Product updated',
+        deleted: 'Product deleted'
+      }[data.action] || 'Products updated';
 
       showToast(actionText, 'success');
     };
 
-    // Register event listeners
+    if (socket.connected) {
+      setIsSocketConnected(true);
+      console.log('✅ Socket already connected on mount');
+    }
+
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     socket.on('products_updated', handleProductsUpdated);
 
-    // Initial fetch
     fetchProducts();
 
-    // Cleanup on unmount
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
       socket.off('products_updated', handleProductsUpdated);
     };
-  }, []); // Empty dependency array = run once on mount
+  }, []);
 
   const handleSave = async (form) => {
     setLoading(true);
     try {
       if (form.product_id) {
-        // UPDATE existing product
         await axios.post(`${API_BASE}/updateProduct`, {
           product_id: form.product_id,
           product_name: form.product_name,
@@ -262,7 +287,6 @@ export default function ProductManagerBody() {
         showToast("Product updated successfully!");
 
       } else {
-        // ADD new product
         const res = await axios.post(`${API_BASE}/addProduct`, {
           product_name: form.product_name,
           price: Number(form.price),
@@ -282,11 +306,7 @@ export default function ProductManagerBody() {
         showToast("Product added successfully!");
       }
 
-      // ✅ NOTE: We no longer call fetchProducts() here!
-      // The socket event will trigger the update automatically.
-      // But for safety (in case socket fails), we keep a fallback:
       setTimeout(() => fetchProducts(), 1000);
-
       setModal(null);
 
     } catch (err) {
@@ -299,14 +319,30 @@ export default function ProductManagerBody() {
     }
   };
 
-  const handleDelete = async (product_id) => {
-    if (!window.confirm("Delete this product?")) return;
+  // ✅ NEW: Open delete confirmation modal
+  const openDeleteConfirm = (product_id, product_name) => {
+    setConfirmModal({
+      show: true,
+      productId: product_id,
+      productName: product_name,
+      action: 'delete'
+    });
+  };
+
+  // ✅ NEW: Close confirmation modal
+  const closeConfirmModal = () => {
+    setConfirmModal({ show: false, productId: null, productName: '', action: null });
+  };
+
+  // ✅ NEW: Execute delete after confirmation
+  const executeDelete = async () => {
+    const { productId, action } = confirmModal;
+    if (!productId || action !== 'delete') return;
 
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/deleteProduct`, { product_id });
+      await axios.post(`${API_BASE}/deleteProduct`, { product_id: productId });
       showToast("Product deleted successfully!", "success");
-      // ✅ Socket event will handle UI update, but keep fallback
       setTimeout(() => fetchProducts(), 1000);
     } catch (err) {
       console.error("Delete Error:", err);
@@ -317,24 +353,39 @@ export default function ProductManagerBody() {
       }
     } finally {
       setLoading(false);
+      closeConfirmModal();
     }
   };
 
   return (
     <div className="pm-container">
+      {/* Toast Notification */}
       {toast.show && (
         <div className={`pm-toast ${toast.type}`}>
           <p>{toast.message}</p>
         </div>
       )}
 
+      {/* Loading Overlay */}
       {loading && (
         <div className="pm-loading-overlay">
           <p>Processing...</p>
         </div>
       )}
 
-      {/* ✅ NEW: Connection status indicator */}
+      {/* ✅ Confirmation Modal */}
+      <ConfirmModal
+        show={confirmModal.show}
+        title="Delete Product?"
+        message={`Are you sure you want to delete "${confirmModal.productName}"? This action cannot be undone.`}
+        confirmText="Yes, Delete"
+        cancelText="Keep Product"
+        variant="danger"
+        onConfirm={executeDelete}
+        onCancel={closeConfirmModal}
+      />
+
+      {/* Connection Status */}
       <div style={{
         position: 'fixed',
         top: 10,
@@ -350,6 +401,7 @@ export default function ProductManagerBody() {
         {isSocketConnected ? '🟢 Live' : '🔴 Offline'}
       </div>
 
+      {/* Product Modal */}
       {modal && <ProductModal product={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
 
       <PageHeader title="Product Management" />
@@ -382,8 +434,14 @@ export default function ProductManagerBody() {
                     <td><span className={p.stock <= 0 ? 'stock-out' : p.stock < 20 ? 'stock-low' : 'stock-ok'}>{p.stock <= 0 ? 'Out of Stock' : p.stock}</span></td>
                     <td>{p.category}</td>
                     <td className="cell-actions">
-                      <button onClick={() => setModal(p)} className="action-btn" disabled={loading}>✏️</button>
-                      <button onClick={() => handleDelete(p.product_id)} className="action-btn delete" disabled={loading}>🗑️</button>
+                      <button onClick={() => setModal(p)} className="action-btn" disabled={loading}>                        <img src="../public/edit-icon.png" alt="" width={'20px'} /></button>
+                      <button
+                        onClick={() => openDeleteConfirm(p.product_id, p.product_name)}
+                        className="action-btn delete"
+                        disabled={loading}
+                      >
+                        <img src="../public/delete-icon.png" alt="" width={'23px'} />
+                      </button>
                     </td>
                   </tr>
                 ))

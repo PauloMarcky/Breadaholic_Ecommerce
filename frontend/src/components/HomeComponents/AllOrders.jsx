@@ -8,6 +8,10 @@ export function AllOrders({ onCancel }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState({ text: "", type: "" });
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    orderId: null
+  });
 
   const currentUserId = localStorage.getItem("currentUserId");
   const listenersAttached = useRef(false);
@@ -23,7 +27,7 @@ export function AllOrders({ onCancel }) {
   // ✅ Fetch user orders
   const fetchUserOrders = async () => {
     try {
-      const res = await axios.get(`http://192.168.1.100:5000/getOrders`);
+      const res = await axios.get(`http://localhost:5000/getOrders`);
       const userOrders = res.data.filter(
         order => String(order.user_id) === String(currentUserId)
       );
@@ -41,24 +45,22 @@ export function AllOrders({ onCancel }) {
     }
   }, [currentUserId]);
 
-  // ✅ NEW: Socket listener for real-time order status updates
+  // ✅ Socket listener for real-time order status updates
   useEffect(() => {
     if (!currentUserId || listenersAttached.current) return;
 
     console.log('🔌 Customer: Setting up order status listener for user', currentUserId);
-    connectSocket(currentUserId); // Ensures user is in user_{uid} room
+    connectSocket(currentUserId);
 
     const handleMyOrderStatusUpdated = (data) => {
       console.log('🔄 Received order status update:', data);
 
-      // Update the specific order in state
       setOrders(prev => prev.map(order =>
         order.order_id === data.order_id
           ? { ...order, status: data.new_status, updated_at: data.updated_at }
           : order
       ));
 
-      // Show toast notification
       setToastMessage({
         text: ` ${data.message || `Order #${data.order_id} is now ${data.new_status}`}`,
         type: 'success'
@@ -68,7 +70,6 @@ export function AllOrders({ onCancel }) {
     socket.on('my_order_status_updated', handleMyOrderStatusUpdated);
     listenersAttached.current = true;
 
-    // Cleanup on unmount
     return () => {
       socket.off('my_order_status_updated', handleMyOrderStatusUpdated);
       listenersAttached.current = false;
@@ -76,11 +77,23 @@ export function AllOrders({ onCancel }) {
     };
   }, [currentUserId]);
 
-  const handleCancelOrder = async (orderId) => {
-    if (!window.confirm("Cancel this order?")) return;
+  // ✅ Open confirmation modal
+  const openCancelConfirm = (orderId) => {
+    setConfirmModal({ show: true, orderId });
+  };
+
+  // ✅ Close confirmation modal
+  const closeCancelConfirm = () => {
+    setConfirmModal({ show: false, orderId: null });
+  };
+
+  // ✅ Execute order cancellation
+  const executeCancelOrder = async () => {
+    const { orderId } = confirmModal;
+    if (!orderId) return;
 
     try {
-      const response = await axios.post("http://192.168.1.100:5000/cancel_order", {
+      const response = await axios.post("http://localhost:5000/cancel_order", {
         order_id: orderId,
         user_id: currentUserId
       });
@@ -95,17 +108,40 @@ export function AllOrders({ onCancel }) {
       console.error("Cancel failed:", err);
       const errorMsg = err.response?.data?.error || "Failed to cancel order";
       setToastMessage({ text: `❌ ${errorMsg}`, type: "error" });
+    } finally {
+      closeCancelConfirm();
     }
   };
 
   return (
     <>
+      {/* Toast Notification */}
       {toastMessage.text && (
         <div className={`order-toast ${toastMessage.type}`}>
           <p>{toastMessage.text}</p>
           <button className="toast-close" onClick={() => setToastMessage({ text: "", type: "" })}>
             &times;
           </button>
+        </div>
+      )}
+
+      {/* ✅ Custom Confirmation Modal */}
+      {confirmModal.show && (
+        <div className="modal-overlay" onClick={closeCancelConfirm}>
+          <div className="cancel-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Cancel Order?</h3>
+            <p>Are you sure you want to cancel order <strong>#{String(confirmModal.orderId).padStart(3, '0')}</strong>?</p>
+            <p className="modal-subtext">This action cannot be undone.</p>
+
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn-secondary" onClick={closeCancelConfirm}>
+                Keep Order
+              </button>
+              <button className="modal-btn modal-btn-danger" onClick={executeCancelOrder}>
+                Yes, Cancel Order
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -145,7 +181,10 @@ export function AllOrders({ onCancel }) {
 
                 <div className="cancel-btn-ord">
                   {order.status === 'Pending' && (
-                    <button className="cancel-order-btn" onClick={() => handleCancelOrder(order.order_id)}>
+                    <button
+                      className="cancel-order-btn"
+                      onClick={() => openCancelConfirm(order.order_id)}
+                    >
                       CANCEL ORDER
                     </button>
                   )}

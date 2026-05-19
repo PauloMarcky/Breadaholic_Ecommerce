@@ -152,7 +152,7 @@ hr {
 
 .input-container button:hover {
 
-  background-color: var(--background-low);
+  background-color: var(--text-light);
 
 }
 

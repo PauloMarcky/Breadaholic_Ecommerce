@@ -521,6 +521,113 @@ tbody tr:hover {
   font-style: italic;
 }
 
+/* ✅ Confirmation Modal Overlay */
+.pm-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: pm-fadeIn 0.2s ease-out;
+}
+
+/* ✅ Confirmation Modal Box */
+.pm-confirm-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  animation: pm-slideUp 0.3s ease-out;
+}
+
+.pm-confirm-icon {
+  font-size: 42px;
+  margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #fef3c7;
+}
+
+.pm-confirm-icon.danger {
+  background: #fef2f2;
+}
+
+.pm-confirm-modal h3 {
+  margin: 0 0 12px;
+  color: #1a1a1a;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.pm-confirm-modal p {
+  margin: 0 0 24px;
+  color: #555;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ✅ Modal Action Buttons */
+.pm-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.pm-confirm-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 130px;
+}
+
+.pm-confirm-btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.pm-confirm-btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.pm-confirm-btn-danger {
+  background: #e74c3c;
+  color: white;
+}
+
+.pm-confirm-btn-danger:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(231, 76, 60, 0.35);
+}
+
+/* ✅ Animations */
+@keyframes pm-fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes
 /* ─── Keep all your existing styles below ─── */
 /* (All your other .pm- styles remain unchanged) */
 

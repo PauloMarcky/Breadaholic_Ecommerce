@@ -32,7 +32,7 @@ export function Header() {
   // ✅ FIX: Extracted as a standalone function so AddressManager can trigger it
   const fetchUserData = async () => {
     try {
-      const userRes = await axios.get(`http://192.168.1.100:5000/getUser/${currentUserId}`);
+      const userRes = await axios.get(`http://localhost:5000/getUser/${currentUserId}`);
       setUserData(userRes.data);
     } catch (err) {
       console.error("Error refreshing user data:", err);
@@ -46,7 +46,7 @@ export function Header() {
     formData.append("file", file);
     formData.append("user_id", currentUserId);
     try {
-      const res = await axios.post("http://192.168.1.100:5000/upload_pfp", formData, {
+      const res = await axios.post("http://localhost:5000/upload_pfp", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setUserData((prev) => ({ ...prev, profile_picture: `${res.data.profile_picture}?t=${Date.now()}` }));
@@ -86,7 +86,7 @@ export function Header() {
   const fetchCart = async () => {
     try {
       if (!currentUserId) return;
-      const response = await axios.get(`http://192.168.1.100:5000/view_cart/${currentUserId}`);
+      const response = await axios.get(`http://localhost:5000/view_cart/${currentUserId}`);
       setCartItems(response.data);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -118,7 +118,7 @@ export function Header() {
   const handleQuantityChange = async (productId, type) => {
     const endpoint = type === "add" ? "/add_to_cart" : "/reduce_quantity";
     try {
-      await axios.post(`http://192.168.1.100:5000${endpoint}`, {
+      await axios.post(`http://localhost:5000${endpoint}`, {
         user_id: currentUserId,
         product_id: productId,
         quantity: 1
@@ -130,7 +130,7 @@ export function Header() {
 
   const handleRemoveItem = async (ordItemId) => {
     try {
-      await axios.post("http://192.168.1.100:5000/remove_from_cart", {
+      await axios.post("http://localhost:5000/remove_from_cart", {
         user_id: currentUserId,
         ordItem_id: ordItemId
       });

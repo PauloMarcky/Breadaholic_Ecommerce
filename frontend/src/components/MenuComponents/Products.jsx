@@ -4,7 +4,7 @@ import { socket, connectSocket } from '../../utils/socket.js';
 import { ProductSidebar } from '../MenuComponents/ProductSidebar';
 import './Products.css';
 
-const API_BASE = 'http://192.168.1.100:5000'; // Update if your IP changes
+const API_BASE = 'http://localhost:5000'; // Update if your IP changes
 
 export function Products({ filters }) {
   const [AllProducts, setAllProducts] = useState([]);
@@ -76,13 +76,24 @@ export function Products({ filters }) {
 
   // Filter/Sort
   useEffect(() => {
-    let filtered = AllProducts.filter(p => filters.category === 'All' || p.category === filters.category);
-    filtered = filtered.filter(p => p.price >= filters.minPrice && p.price <= filters.maxPrice);
-    if (filters.sortBy === 'alphabetically') filtered.sort((a, b) => a.product_name.localeCompare(b.product_name));
-    if (filters.sortBy === 'low_to_high') filtered.sort((a, b) => a.price - b.price);
-    if (filters.sortBy === 'high_to_low') filtered.sort((a, b) => b.price - a.price);
+    let filtered = AllProducts.filter(p =>
+      filters.category === 'All' || p.category === filters.category
+    );
+    filtered = filtered.filter(p =>
+      p.price >= filters.minPrice && p.price <= filters.maxPrice
+    );
+
+    if (filters.sortBy === 'alphabetically') {
+      filtered.sort((a, b) => a.product_name.localeCompare(b.product_name));
+    }
+    if (filters.sortBy === 'low_to_high') {
+      filtered.sort((a, b) => a.price - b.price);
+    }
+    if (filters.sortBy === 'high_to_low') {
+      filtered.sort((a, b) => b.price - a.price);
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDisplayProducts(filters.sortBy === 'newest' ? [...filtered].sort(() => Math.random() - 0.5) : filtered);
+    setDisplayProducts(filtered);
   }, [AllProducts, filters]);
 
   const handleAddToBasket = (productId, qty, e) => {

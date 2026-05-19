@@ -5,8 +5,14 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from mysql.connector import pooling
 from werkzeug.utils import secure_filename
 from decimal import Decimal
+from collections import defaultdict
+from dotenv import load_dotenv
+from flask_mail import Mail, Message
 import json
 import os
+
+load_dotenv()
+
 
 # ✅ FIXED: Proper Flask initialization
 app = Flask(__name__)
@@ -14,6 +20,20 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 
+
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv(
+    'MAIL_USE_TLS', 'true').lower() == 'true'
+app.config['MAIL_USE_SSL'] = os.getenv(
+    'MAIL_USE_SSL', 'false').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+
+mail = Mail(app)
+
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'paulobalaba5@gmail.com')
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
@@ -34,8 +54,12 @@ PRODUCT_UPLOAD_FOLDER = os.path.join("public", "product_images")
 os.makedirs(PROFILE_UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PRODUCT_UPLOAD_FOLDER, exist_ok=True)
 
+active_user_connections = defaultdict(int)  # Tracks open tabs per user_id
+session_to_user = {}  # Maps Socket session ID -> user_id
 
 # ✅ NEW: Helper to convert Decimal → float for JSON serialization
+
+
 def serialize_row(row):
     """Convert MySQL row (dict or tuple) to JSON-serializable format"""
     if row is None:
@@ -60,20 +84,28 @@ def serialize_rows(rows):
 
 
 def get_date_ranges(period='monthly'):
-    """Generate date ranges for weekly/monthly reports"""
-    today = datetime.now()
+    """Generate date ranges for weekly/monthly reports with Monday-Sunday weeks"""
+    today = datetime.now().date()  # ✅ Use .date() for consistent date comparisons
     ranges = []
 
     if period == 'weekly':
-        # Last 8 weeks (including current)
-        for i in range(7, -1, -1):
-            end = today - timedelta(days=i*7)
-            start = end - timedelta(days=6)
+        # ✅ Find the Monday of the current week (Monday=0, Sunday=6)
+        current_week_monday = today - timedelta(days=today.weekday())
+
+        # Generate last 8 weeks (including current), going backwards
+        for i in range(8):
+            week_start = current_week_monday - timedelta(weeks=i)  # Monday
+            week_end = week_start + timedelta(days=6)               # Sunday
+
             ranges.append({
-                'label': f"Week {8-i}: {start.strftime('%b %d')}",
-                'start': start.date(),
-                'end': end.date()
+                'label': f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}",
+                'start': week_start,
+                'end': week_end
             })
+
+        # ✅ Reverse so oldest week is first (for chart left-to-right)
+        ranges.reverse()
+
     else:  # monthly
         # Last 12 months
         for i in range(11, -1, -1):
@@ -82,27 +114,62 @@ def get_date_ranges(period='monthly'):
             if month <= 0:
                 month += 12
                 year -= 1
+
+            # First day of month
+            month_start = datetime(year, month, 1).date()
+            # Last day of month
+            if month == 12:
+                month_end = datetime(year, 12, 31).date()
+            else:
+                month_end = (datetime(year, month + 1, 1) -
+                             timedelta(days=1)).date()
+
             ranges.append({
-                'label': datetime(year, month, 1).strftime('%B %Y'),
-                'start': datetime(year, month, 1).date(),
-                'end': datetime(year, month + 1, 1).date() - timedelta(days=1) if month < 12 else datetime(year, 12, 31).date()
+                'label': month_start.strftime('%B %Y'),
+                'start': month_start,
+                'end': month_end
             })
 
     return ranges
-
 # ==================== SOCKETIO EVENT HANDLERS ====================
 
 
 @socketio.on('connect')
 def handle_connect():
-    print(f'Client connected: {request.sid}')
+    print(f'🔌 Client connected: {request.sid}')
     emit('connection_response', {
          'message': 'Connected to Breadaholic server!'})
 
 
+@socketio.on('user_set_online')
+def handle_user_online(data):
+    user_id = str(data.get('user_id'))
+    if user_id:
+        sid = request.sid
+        session_to_user[sid] = user_id
+        active_user_connections[user_id] += 1
+
+        # Only notify when the FIRST tab opens (prevents duplicate "Online" emissions)
+        if active_user_connections[user_id] == 1:
+            socketio.emit('user_status_changed', {
+                          'user_id': user_id, 'status': 'Online'})
+            print(f"✅ User {user_id} is now Online")
+
+
 @socketio.on('disconnect')
 def handle_disconnect():
-    print(f'Client disconnected: {request.sid}')
+    sid = request.sid
+    user_id = session_to_user.pop(sid, None)
+    if user_id:
+        active_user_connections[user_id] -= 1
+
+        # Only notify when the LAST tab closes
+        if active_user_connections[user_id] <= 0:
+            active_user_connections.pop(user_id, None)
+            socketio.emit('user_status_changed', {
+                          'user_id': user_id, 'status': 'Offline'})
+            print(f"❌ User {user_id} is now Offline")
+    print(f'🔌 Client disconnected: {sid}')
 
 
 @socketio.on('join_user_room')
@@ -1144,6 +1211,15 @@ def update_order_status(order_id):
             "UPDATE orders SET status = %s WHERE order_id = %s", (new_status, order_id))
         conn.commit()
 
+        # ✅ Emit event for sales report refresh when order is completed
+        if new_status_lower == 'completed':
+            socketio.emit('sales_data_updated', {
+                'type': 'order_completed',
+                'order_id': order_id,
+                'timestamp': datetime.now().isoformat()
+            })
+            print(f"✅ Emitted sales_data_updated for order {order_id}")
+
         # ✅ 4. Emit real-time status update to ALL ADMIN panels
         socketio.emit('order_status_updated', {
             'order_id': order_id,
@@ -1179,6 +1255,43 @@ def update_order_status(order_id):
         if cursor:
             cursor.close()
         if conn and conn.is_connected():
+            conn.close()
+
+# ✅ NEW: Get order items by order_id
+
+
+@app.route('/getOrderItems/<int:order_id>', methods=['GET'])
+def get_order_items(order_id):
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                oi.ord_id,
+                oi.product_id,
+                oi.quantity,
+                oi.price,
+                p.product_name,
+                p.image,
+                p.category,
+                (oi.quantity * oi.price) AS subtotal
+            FROM ORDER_ITEMS oi
+            JOIN Products p ON oi.product_id = p.product_id
+            WHERE oi.order_id = %s
+            ORDER BY p.product_name
+        """
+        cursor.execute(query, (order_id,))
+        items = cursor.fetchall()
+
+        return jsonify(serialize_rows(items)), 200
+
+    except Exception as e:
+        print(f"❌ getOrderItems error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
             conn.close()
 
 
@@ -1241,45 +1354,41 @@ def delete_order(order_id):
 def get_sales_summary():
     conn = None
     try:
-        period = request.args.get('period', 'monthly')  # 'weekly' or 'monthly'
+        period = request.args.get('period', 'monthly')
         date_ranges = get_date_ranges(period)
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        timestamp_col = 'date_ordered'  # ← CHANGE to 'created_at' if needed
         results = []
-        for range_data in date_ranges:
-            cursor.execute("""
+
+        for dr in date_ranges:
+            cursor.execute(f"""
                 SELECT 
                     COUNT(DISTINCT o.order_id) as order_count,
-                    SUM(o.order_total) as gross_revenue,
-                    SUM(o.shipping_fee) as total_shipping,
-                    SUM(oi.quantity) as items_sold
+                    COALESCE(SUM(o.order_total), 0) as gross_revenue,
+                    COALESCE(SUM(oi.quantity), 0) as items_sold
                 FROM ORDERS o
                 LEFT JOIN ORDER_ITEMS oi ON o.order_id = oi.order_id
-                WHERE o.status = 'Completed'  -- Only count completed orders
-                AND DATE(o.created_at) BETWEEN %s AND %s
-            """, (range_data['start'], range_data['end']))
+                WHERE o.status = 'Completed'
+                AND DATE(o.{timestamp_col}) BETWEEN %s AND %s
+            """, (dr['start'], dr['end']))
 
-            row = cursor.fetchone()
+            row = cursor.fetchone() or {
+                'order_count': 0, 'gross_revenue': 0, 'items_sold': 0}
             results.append({
-                'period': range_data['label'],
-                'start_date': range_data['start'].isoformat(),
-                'end_date': range_data['end'].isoformat(),
-                'order_count': row['order_count'] or 0,
-                'gross_revenue': float(row['gross_revenue'] or 0),
-                'net_revenue': float((row['gross_revenue'] or 0) - (row['total_shipping'] or 0)),
-                'total_shipping': float(row['total_shipping'] or 0),
-                'items_sold': row['items_sold'] or 0
+                'period': dr['label'],
+                'order_count': int(row['order_count']),
+                'gross_revenue': float(row['gross_revenue']),
+                'items_sold': int(row['items_sold'])
             })
 
-        return jsonify({
-            'period': period,
-            'data': results,
-            'generated_at': datetime.now().isoformat()
-        }), 200
+        return jsonify({'period': period, 'data': results}), 200
 
     except Exception as e:
-        print(f"❌ Sales summary error: {e}")
+        print(f"❌ summary ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -1291,66 +1400,56 @@ def get_product_sales():
     conn = None
     try:
         period = request.args.get('period', 'monthly')
-        # Optional: filter by single product
-        product_id = request.args.get('product_id')
-        date_ranges = get_date_ranges(period)
-
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        results = []
-        for range_data in date_ranges:
-            # Base query for all products
-            query = """
-                SELECT 
-                    p.product_id,
-                    p.product_name,
-                    p.category,
-                    SUM(oi.quantity) as total_sold,
-                    SUM(oi.quantity * oi.price) as revenue,
-                    COUNT(DISTINCT o.order_id) as order_count
-                FROM ORDER_ITEMS oi
-                JOIN Products p ON oi.product_id = p.product_id
-                JOIN ORDERS o ON oi.order_id = o.order_id
-                WHERE o.status = 'Completed'
-                AND DATE(o.created_at) BETWEEN %s AND %s
-            """
-            params = [range_data['start'], range_data['end']]
+        timestamp_col = 'date_ordered'  # ← CHANGE to 'created_at' if needed
+        today = datetime.now()
 
-            if product_id:
-                query += " AND p.product_id = %s"
-                params.append(product_id)
+        if period == 'weekly':
+            start_date = (today - timedelta(days=7)).date()
+        else:
+            start_date = today.replace(day=1).date()
 
-            query += " GROUP BY p.product_id, p.product_name, p.category ORDER BY revenue DESC"
+        cursor.execute(f"""
+            SELECT 
+                p.product_id,
+                p.product_name,
+                p.category,
+                COALESCE(SUM(oi.quantity), 0) as total_sold,
+                COALESCE(SUM(oi.quantity * oi.price), 0) as revenue
+            FROM Products p
+            LEFT JOIN ORDER_ITEMS oi ON p.product_id = oi.product_id
+            LEFT JOIN ORDERS o ON oi.order_id = o.order_id 
+                AND o.status = 'Completed'
+                AND DATE(o.{timestamp_col}) >= %s
+            GROUP BY p.product_id, p.product_name, p.category
+            HAVING revenue > 0
+            ORDER BY revenue DESC
+            LIMIT 10
+        """, (start_date,))
 
-            cursor.execute(query, tuple(params))
-            products = cursor.fetchall()
-
-            results.append({
-                'period': range_data['label'],
-                'products': [
-                    {
-                        'product_id': p['product_id'],
-                        'product_name': p['product_name'],
-                        'category': p['category'],
-                        'total_sold': p['total_sold'] or 0,
-                        'revenue': float(p['revenue'] or 0),
-                        'order_count': p['order_count'] or 0,
-                        'avg_price': float((p['revenue'] or 0) / p['total_sold']) if p['total_sold'] else 0
-                    }
-                    for p in products
-                ]
-            })
+        products = cursor.fetchall()
 
         return jsonify({
             'period': period,
-            'product_id_filter': product_id,
-            'data': results,
-            'generated_at': datetime.now().isoformat()
+            'data': [{
+                'products': [
+                    {
+                        'product_id': int(p['product_id']),
+                        'product_name': p['product_name'],
+                        'category': p['category'],
+                        'total_sold': int(p['total_sold']),
+                        'revenue': float(p['revenue']) if p['revenue'] else 0.0
+                    } for p in products
+                ]
+            }]
         }), 200
 
     except Exception as e:
-        print(f"❌ Product sales error: {e}")
+        print(f"❌ products ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -1359,76 +1458,206 @@ def get_product_sales():
 
 @app.route('/sales_report/stats', methods=['GET'])
 def get_sales_stats():
-    """Quick KPIs for dashboard cards"""
     conn = None
     try:
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        # Check your ORDERS table: use 'date_ordered' OR 'created_at'
+        timestamp_col = 'date_ordered'  # Change to 'created_at' if needed
+
         # Today's stats
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as orders_today,
-                SUM(order_total) as revenue_today
+        cursor.execute(f"""
+            SELECT COUNT(*) as orders, COALESCE(SUM(order_total), 0) as gross_revenue
             FROM ORDERS 
-            WHERE status = 'Completed' 
-            AND DATE(created_at) = CURDATE()
+            WHERE status = 'Completed' AND DATE({timestamp_col}) = CURDATE()
         """)
-        today = cursor.fetchone()
+        today = cursor.fetchone() or {'orders': 0, 'gross_revenue': 0}
 
         # This month stats
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as orders_month,
-                SUM(order_total) as revenue_month
+        cursor.execute(f"""
+            SELECT COUNT(*) as orders, COALESCE(SUM(order_total), 0) as gross_revenue
             FROM ORDERS 
             WHERE status = 'Completed' 
-            AND MONTH(created_at) = MONTH(CURDATE())
-            AND YEAR(created_at) = YEAR(CURDATE())
+            AND MONTH({timestamp_col}) = MONTH(CURDATE())
+            AND YEAR({timestamp_col}) = YEAR(CURDATE())
         """)
-        month = cursor.fetchone()
+        month = cursor.fetchone() or {'orders': 0, 'gross_revenue': 0}
 
-        # Top 5 products this month
-        cursor.execute("""
-            SELECT 
-                p.product_name,
-                SUM(oi.quantity) as total_sold,
-                SUM(oi.quantity * oi.price) as revenue
+        # Top 3 products by UNITS SOLD (not revenue)
+        cursor.execute(f"""
+            SELECT p.product_name, COALESCE(SUM(oi.quantity), 0) as total_sold, 
+                   COALESCE(SUM(oi.quantity * oi.price), 0) as revenue
             FROM ORDER_ITEMS oi
             JOIN Products p ON oi.product_id = p.product_id
             JOIN ORDERS o ON oi.order_id = o.order_id
             WHERE o.status = 'Completed'
-            AND MONTH(o.created_at) = MONTH(CURDATE())
-            AND YEAR(o.created_at) = YEAR(CURDATE())
-            GROUP BY p.product_id
-            ORDER BY revenue DESC
-            LIMIT 5
+            AND MONTH(o.{timestamp_col}) = MONTH(CURDATE())
+            AND YEAR(o.{timestamp_col}) = YEAR(CURDATE())
+            GROUP BY p.product_id, p.product_name
+            ORDER BY total_sold DESC
+            LIMIT 3
         """)
-        top_products = cursor.fetchall()
+        top = cursor.fetchall()
 
         return jsonify({
             'today': {
-                'orders': today['orders_today'] or 0,
-                'revenue': float(today['revenue_today'] or 0)
+                'orders': int(today['orders']) if today['orders'] else 0,
+                'gross_revenue': float(today['gross_revenue']) if today['gross_revenue'] else 0.0
             },
             'this_month': {
-                'orders': month['orders_month'] or 0,
-                'revenue': float(month['revenue_month'] or 0)
+                'orders': int(month['orders']) if month['orders'] else 0,
+                'gross_revenue': float(month['gross_revenue']) if month['gross_revenue'] else 0.0
             },
             'top_products': [
                 {
                     'name': p['product_name'],
-                    'sold': p['total_sold'],
-                    'revenue': float(p['revenue'])
-                } for p in top_products
+                    'sold': int(p['total_sold']),
+                    'revenue': float(p['revenue']) if p['revenue'] else 0.0
+                } for p in top
             ]
         }), 200
 
     except Exception as e:
+        print(f"❌ stats ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
             conn.close()
+
+
+@app.route('/admin/getUsers', methods=['GET'])
+def get_all_users():
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT 
+                u.user_id, 
+                u.first_name, 
+                u.last_name, 
+                u.barangay, 
+                u.status, 
+                u.role,
+                (SELECT COUNT(*) FROM ORDERS o WHERE o.user_id = u.user_id AND o.status = 'Pending') as pending_orders
+            FROM Users u
+            ORDER BY u.user_id DESC
+        """)
+        users = cursor.fetchall()
+
+        for u in users:
+            uid = str(u.get('user_id'))
+            # ✅ Add real-time online status
+            u['is_online'] = active_user_connections.get(uid, 0) > 0
+
+            # ✅ Normalize role
+            raw_role = str(u.get('role', 'User')).strip().capitalize()
+            u['role'] = raw_role if raw_role in ['Admin', 'User'] else 'User'
+
+        return jsonify(users), 200
+
+    except Exception as e:
+        print(f"❌ getUsers ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/admin/updateUserRole', methods=['PUT'])
+def update_user_role():
+    data = request.get_json()
+    # ✅ Force INT conversion to match MySQL schema
+    user_id = int(data.get('user_id', 0))
+    new_role = data.get('role')
+
+    if not user_id or new_role not in ['Admin', 'User']:
+        return jsonify({"error": "Invalid role or user ID"}), 400
+
+    conn = None
+    try:
+        conn = db_pool.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE Users SET role = %s WHERE user_id = %s", (new_role, user_id))
+        conn.commit()
+
+        print(
+            f"✅ Role updated: user_id={user_id}, role={new_role}, rows_affected={cursor.rowcount}")
+        return jsonify({"message": "Role updated successfully"}), 200
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"❌ Role update error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/send_contact_email', methods=['POST'])
+def send_contact_email():
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        message = data.get('message', '').strip()
+
+        if not all([name, email, message]):
+            return jsonify({"error": "All fields are required"}), 400
+
+        # ✅ Use charset='utf-8' for proper encoding
+        msg = Message(
+            subject=f"New Contact Form: {name}",  # ✅ No emojis in subject
+            sender=os.getenv('MAIL_USERNAME'),
+            recipients=[os.getenv('ADMIN_EMAIL')],
+            reply_to=email,
+            charset='utf-8',  # ✅ Critical for non-ASCII support
+            body=f"""
+New message from Breadaholic contact form:
+
+Name: {name}
+Email: {email}
+
+Message:
+{message}
+            """,
+            html=f"""
+            <h3>New Contact Form Submission</h3>
+            <p><strong>Name:</strong> {name}</p>
+            <p><strong>Email:</strong> {email}</p>
+            <p><strong>Message:</strong><br/>{message.replace(chr(10), '<br/>')}</p>
+            <hr/>
+            <small>Sent from Breadaholic Website</small>
+            """
+        )
+
+        mail.send(msg)
+        print(f"✅ Email sent to {os.getenv('ADMIN_EMAIL')}")
+        return jsonify({"success": True, "message": "Email sent successfully!"}), 200
+
+    except UnicodeEncodeError as e:
+        print(f"❌ Encoding error: {e}")
+        return jsonify({"error": "Failed to encode email. Avoid special characters."}), 500
+    except Exception as e:
+        print(f"❌ Email error: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Failed to send email. Check server logs."}), 500
+
+
+# 🔍 DEBUG: Verify .env is loaded (remove after testing)
+print("🔍 .env values:")
+print(f"  MAIL_SERVER: {os.getenv('MAIL_SERVER')}")
+print(f"  MAIL_USERNAME: {os.getenv('MAIL_USERNAME')}")
+print(
+    f"  MAIL_PASSWORD: {'***' if os.getenv('MAIL_PASSWORD') else '⚠️ MISSING!'}")
+print(f"  ADMIN_EMAIL: {os.getenv('ADMIN_EMAIL')}")
 
 
 if __name__ == '__main__':

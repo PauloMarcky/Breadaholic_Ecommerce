@@ -2,7 +2,7 @@ import './Checkout.css'
 import axios from 'axios';
 import { useState, useEffect } from 'react'
 
-const API_BASE = 'http://192.168.1.100:5000'; // ✅ Centralized API base
+const API_BASE = 'http://localhost:5000'; // ✅ Centralized API base
 
 export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessage }) {
   const productTotal = itemsToBuy.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -206,7 +206,7 @@ export function Checkout({ onCancel, itemsToBuy, setSelectedItems, setToastMessa
           onClick={handleConfirmOrder}
           disabled={isLoading || !selectedAddress || feeLoading}
         >
-          {isLoading ? "PLACING ORDER..." : `CONFIRM ORDER • ₱${grandTotal.toFixed(2)}`}
+          {isLoading ? "PLACING ORDER..." : `CONFIRM ORDER`}
         </button>
         <button className="cancel" onClick={onCancel} disabled={isLoading}>CANCEL</button>
       </div>

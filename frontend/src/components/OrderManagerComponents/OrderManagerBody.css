@@ -197,7 +197,7 @@ body.om-no-scroll {
 
 .om-table__actions {
   display: flex;
-  gap: 6px;
+  gap: 15px;
   justify-content: center;
   align-items: center;
 }
@@ -320,8 +320,8 @@ body.om-no-scroll {
 .om-detail {
   position: fixed;
   top: 0;
-  right: -340px;
-  width: 320px;
+  right: -500px;
+  width: 500px;
   height: 100vh;
   background: var(--card);
   border-left: 1px solid var(--border);
@@ -518,6 +518,286 @@ body.om-no-scroll {
 
 .om-toast__close:hover {
   color: #374151;
+}
+
+/* ✅ Confirmation Modal Overlay */
+.om-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  /* 🔥 Higher than detail panel & toast */
+  animation: om-fadeIn 0.2s ease-out;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* ✅ Confirmation Modal Box */
+.om-confirm-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: om-slideUp 0.3s ease-out;
+}
+
+.om-confirm-icon {
+  font-size: 44px;
+  margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: #fef2f2;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.om-confirm-icon.danger {
+  background: #fef2f2;
+}
+
+.om-confirm-modal h3 {
+  margin: 0 0 12px;
+  color: #1a1a1a;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.om-confirm-modal p {
+  margin: 0 0 24px;
+  color: #555;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ✅ Modal Action Buttons */
+.om-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.om-confirm-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 130px;
+}
+
+.om-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.om-confirm-btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.om-confirm-btn-secondary:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.om-confirm-btn-danger {
+  background: #e74c3c;
+  color: white;
+}
+
+.om-confirm-btn-danger:hover:not(:disabled) {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(231, 76, 60, 0.35);
+}
+
+/* ✅ Order Items Section */
+.om-order-items {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 20px 0;
+  border: 1px solid #e2e8f0;
+}
+
+.om-items-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.om-items-loading,
+.om-items-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+}
+
+.om-items-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.om-items-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.om-items-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.om-item-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.om-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.om-item-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #f1f5f9;
+  flex-shrink: 0;
+}
+
+.om-item-name {
+  display: block;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.om-item-category {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.om-item-qty {
+  font-weight: 600;
+  color: #334155;
+  min-width: 30px;
+  text-align: center;
+}
+
+.om-item-price {
+  color: #475569;
+  min-width: 60px;
+  text-align: right;
+}
+
+.om-item-subtotal {
+  font-weight: 600;
+  color: #0f172a;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ✅ Ensure detail panel can scroll if content is long */
+.om-detail {
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+}
+
+.om-detail__header {
+  flex-shrink: 0;
+}
+
+.om-detail>*:last-child {
+  margin-bottom: 24px;
+}
+
+/* ✅ Responsive: Stack item row on small screens */
+@media (max-width: 480px) {
+  .om-item-row {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 8px;
+  }
+
+  .om-item-qty,
+  .om-item-price {
+    grid-row: 2;
+  }
+
+  .om-item-subtotal {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 16px;
+  }
+}
+
+/* ✅ Animations */
+@keyframes om-fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes om-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ✅ Ensure modal renders above all other elements */
+.om-layout {
+  position: relative;
 }
 
 @keyframes slideIn {

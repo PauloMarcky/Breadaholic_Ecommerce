@@ -1,7 +1,31 @@
-import './ContactBody.css';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import './ContactBody.css'
 
 export function ContactBody() {
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState(null); // 'sending' | 'success' | 'error'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus('sending');
+
+    try {
+      await axios.post('http://localhost:5000/send_contact_email', formData);
+      setStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setStatus(null), 3000);
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   return (
     <>
       <div className="body-main">
@@ -38,15 +62,42 @@ export function ContactBody() {
               target='blank'><img src="./public/mess.png" alt="" /></Link>
           </div>
         </div>
+
         <div className="contact-right">
-          <form className="input-container" action="">
+          <form className="input-container" onSubmit={handleSubmit}>
             <p>Name</p>
-            <input className="name" type="text" name="" id="" placeholder="Name" />
+            <input
+              className="name"
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Name"
+              required
+            />
             <p>Email</p>
-            <input className="email" type="email" name="" id="" placeholder="Your Email" />
+            <input
+              className="email"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Your Email"
+              required
+            />
             <p>Message</p>
-            <textarea name="" id="" placeholder="Message...."></textarea>
-            <button>SEND MESSAGE</button>
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              placeholder="Message...."
+              required
+            ></textarea>
+            <button type="submit" disabled={status === 'sending'}>
+              {status === 'sending' ? 'Sending...' : 'SEND MESSAGE'}
+            </button>
+            {status === 'success' && <p className="success-msg" style={{ color: 'var(--cream)', textAlign: 'center' }}>✓ Message sent!</p>}
+            {status === 'error' && <p className="error-msg" style={{ color: 'red', textAlign: 'center' }}>✗ Failed. Try again.</p>}
           </form>
         </div>
       </div>
