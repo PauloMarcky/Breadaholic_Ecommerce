@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
 import './UserManagerBody.css';
 
 const API_BASE = 'http://localhost:5000';
-const SOCKET_BASE = 'http://localhost:5000';
-
-// ✅ Initialize socket once (outside component)
-const socket = io(SOCKET_BASE, {
-  transports: ['polling', 'websocket'], // ✅ Polling first for better compatibility
-  reconnection: true,
-  reconnectionAttempts: 5
-});
 
 const PageHeader = ({ title }) => <div className="um-page-header"><h1>{title}</h1></div>;
 
@@ -23,44 +14,18 @@ const StatCard = ({ label, value, sub, color }) => (
   </div>
 );
 
-// ✅ Online/Offline Badge Component
-const StatusBadge = ({ isOnline }) => (
-  <span className={`um-badge ${isOnline ? 'um-badge-online' : 'um-badge-offline'}`}>
-    {isOnline ? '🟢 Online' : '⚪ Offline'}
-  </span>
-);
-
 export default function UserManagerBody() {
   const [users, setUsers] = useState([]);
-  const [filter, setFilter] = useState("All"); // ✅ Now filters by role: "All" | "User" | "Admin"
+  const [filter, setFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
 
-  const currentUserId = localStorage.getItem("currentUserId");
+  // ✅ Removed: currentUserId & socket logic
 
   useEffect(() => {
     fetchUsers();
-
-    if (currentUserId) {
-      console.log(`🟢 Emitting user_set_online for user ${currentUserId}`);
-      socket.emit('user_set_online', { user_id: currentUserId });
-    }
-
-    const handleStatusChange = (data) => {
-      console.log(`🔄 Status update: User ${data.user_id} is ${data.status}`);
-      setUsers(prev => prev.map(u =>
-        String(u.user_id) === String(data.user_id)
-          ? { ...u, is_online: data.status === 'Online' }
-          : u
-      ));
-    };
-
-    socket.on('user_status_changed', handleStatusChange);
-
-    return () => {
-      socket.off('user_status_changed', handleStatusChange);
-    };
-  }, [currentUserId]);
+    // ✅ Removed: socket emit & listener cleanup
+  }, []); // ✅ Removed dependency: [currentUserId]
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -92,7 +57,6 @@ export default function UserManagerBody() {
     }
   };
 
-  // ✅ UPDATED: Filter by ROLE instead of status
   const filtered = filter === "All"
     ? users
     : users.filter(u => {
@@ -110,7 +74,7 @@ export default function UserManagerBody() {
     <div style={{ padding: 24 }}>
       <PageHeader title="User Dashboard" />
 
-      {/* ✅ UPDATED Stats */}
+      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 24 }}>
         <StatCard label="Total Users" value={users.length} sub="Registered accounts" />
         <StatCard label="Admins" value={adminCount} sub="With full access" color="#8B5010" />
@@ -120,7 +84,6 @@ export default function UserManagerBody() {
       <div className="table-wrapper">
         <div className="table-header">
           <h3>User List</h3>
-          {/* ✅ UPDATED: Filter by Role */}
           <select value={filter} onChange={e => setFilter(e.target.value)} className="um-select">
             <option value="All">All Roles</option>
             <option value="User">Customers</option>
@@ -136,13 +99,14 @@ export default function UserManagerBody() {
               <th>Pending Orders</th>
               <th>Barangay</th>
               <th>Role</th>
-              <th>Status</th>
+              {/* ✅ REMOVED: Status column header */}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
+                  {/* ✅ Updated colSpan from 6 → 5 */}
                   No users found{filter !== "All" ? ` with role "${filter}"` : ''}
                 </td>
               </tr>
@@ -177,7 +141,7 @@ export default function UserManagerBody() {
                         <option value="User">User</option>
                       </select>
                     </td>
-                    <td><StatusBadge isOnline={u.is_online} /></td>
+                    {/* ✅ REMOVED: StatusBadge cell */}
                   </tr>
                 );
               })
