@@ -190,6 +190,33 @@
   outline: none;
 }
 
+.field_street {
+  display: block;
+  width: 100%;
+  height: 33px;
+  padding: 0 10px;
+  margin-bottom: 10px;
+  background: var(--white);
+  border: 1.5px solid rgba(100, 50, 5, 0.25);
+  border-radius: 3px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.8rem;
+  color: #9A7020;
+  outline: none;
+  grid-column: 1 / -1;
+}
+
+.field_street:focus {
+  border-color: var(--orange-btn);
+}
+
+.field_street::placeholder {
+  color: #9A7020;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
 .field:focus {
   border-color: var(--orange-btn);
 }

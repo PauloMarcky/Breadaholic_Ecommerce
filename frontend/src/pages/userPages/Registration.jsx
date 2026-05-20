@@ -32,7 +32,8 @@ export function Registration() {
   const [logInData, setLogInData] = useState({ mobile: "", password: "" });
 
   const [formData, setFormData] = useState({
-    firstName: "", lastName: "", mobile: "", barangay: "", street: "",
+    firstName: "", lastName: "", mobile: "", barangay: "",
+    street: "", houseNumber: "",  // ✅ ADD THIS
     password: "", confirmPass: "",
   });
 
@@ -188,8 +189,35 @@ export function Registration() {
                 <input name="mobile" className={style.field} type="tel" placeholder="Mobile Number" onChange={handleChange} required />
                 <p className={style.fieldLabel}>Address</p>
                 <div className={style.addressInput}>
-                  <Select options={barangayOptions} placeholder="Select Barangay" maxMenuHeight={150} onChange={handleSelectChange} classNamePrefix="reactSelect" isSearchable={false} components={{ IndicatorSeparator: () => null, DropdownIndicator: () => null }} />
-                  <input className={style.field} type="text" name="street" onChange={handleChange} placeholder="Street" />
+                  <Select
+                    options={barangayOptions}
+                    placeholder="Select Barangay"
+                    maxMenuHeight={150}
+                    onChange={handleSelectChange}
+                    classNamePrefix="reactSelect"
+                    isSearchable={false}
+                    components={{
+                      IndicatorSeparator: () => null,
+                      DropdownIndicator: () => null
+                    }}
+                  />
+                  {/* ✅ ADD HOUSE NUMBER FIELD */}
+                  <input
+                    className={style.field}
+                    type="text"
+                    name="houseNumber"
+                    onChange={handleChange}
+                    placeholder="House Number"
+                    required
+                  />
+                  <input
+                    className={style.field_street}
+                    type="text"
+                    name="street"
+                    onChange={handleChange}
+                    placeholder="Street"
+                    required
+                  />
                 </div>
                 <input className={style.field} type="password" placeholder="Password" name="password" onChange={handleChange} required />
                 <input className={style.field} type="password" placeholder="Confirm Password" name="confirmPass" onChange={handleChange} required />

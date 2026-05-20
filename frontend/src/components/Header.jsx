@@ -29,11 +29,38 @@ export function Header() {
   const openSidebar = () => setIsProfileOpen(!isProfileOpen);
   const handleConfirmation = () => setIsConfirmed(!isConfirmed);
 
+  // ✅ NEW: Validate checkout and show toast warning (no modal)
+  const handleCheckoutClick = () => {
+    // Check if cart is empty
+    if (!cartItems || cartItems.length === 0) {
+      setToastMessage({
+        text: "Your cart is empty. Please add items before checking out.",
+        type: "warning"
+      });
+      return;
+    }
+    // Check if no items are selected
+    if (!selectedItems || selectedItems.length === 0) {
+      setToastMessage({
+        text: "Please check the items you want to buy before proceeding to checkout.",
+        type: "warning"
+      });
+      return;
+    }
+    // Validation passed - open checkout
+    handleCheckout();
+  };
+
   // ✅ FIX: Extracted as a standalone function so AddressManager can trigger it
   const fetchUserData = async () => {
     try {
       const userRes = await axios.get(`http://localhost:5000/getUser/${currentUserId}`);
-      setUserData(userRes.data);
+      // ✅ Normalize field names for frontend consistency
+      setUserData({
+        ...userRes.data,
+        street: userRes.data.street_name,      // alias: street_name → street
+        houseNumber: userRes.data.house_num    // alias: house_num → houseNumber
+      });
     } catch (err) {
       console.error("Error refreshing user data:", err);
     }
@@ -49,7 +76,10 @@ export function Header() {
       const res = await axios.post("http://localhost:5000/upload_pfp", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setUserData((prev) => ({ ...prev, profile_picture: `${res.data.profile_picture}?t=${Date.now()}` }));
+      setUserData((prev) => ({
+        ...prev,
+        profile_picture: `${res.data.profile_picture}?t=${Date.now()}`
+      }));
     } catch (err) {
       console.error("Upload failed:", err);
     }
@@ -68,6 +98,7 @@ export function Header() {
     );
   };
 
+  // ✅ Toast auto-dismiss effect (already in your code)
   useEffect(() => {
     if (toastMessage.text) {
       const timer = setTimeout(() => {
@@ -208,7 +239,11 @@ export function Header() {
                 )}
               </div>
               <div className="buttons-place">
-                <button className="checkout" onClick={handleCheckout} disabled={validSelectedIds.length === 0}>
+                {/* ✅ UPDATED: Removed disabled, added onClick with validation */}
+                <button
+                  className="checkout"
+                  onClick={handleCheckoutClick}
+                >
                   CHECKOUT ({validSelectedIds.length})
                 </button>
                 <div className={`sidebar-overlay ${proceedCheckout && 'visible'}`}></div>
@@ -216,6 +251,7 @@ export function Header() {
                   <Checkout
                     onCancel={handleCheckout}
                     itemsToBuy={cartItems.filter(item => selectedItems.includes(item.ordItem_id))}
+                    selectedItems={selectedItems}  // ✅ Pass selectedItems to Checkout
                     setSelectedItems={setSelectedItems}
                     setToastMessage={setToastMessage}
                   />
@@ -270,8 +306,14 @@ export function Header() {
                 </li>
                 <li>
                   <img className="info-img-container" src="./public/address.png" alt="" />
+                  {/* ✅ UPDATED: Include houseNumber + use normalized field names */}
                   <p>
-                    {[userData?.street, userData?.barangay, userData?.city]
+                    {[
+                      userData?.houseNumber,    // ✅ NEW: House number first
+                      userData?.street,         // ✅ Uses alias (street_name → street)
+                      userData?.barangay,
+                      userData?.landmark        // ✅ Optional: Include landmark
+                    ]
                       .filter(Boolean)
                       .join(", ")}
                   </p>
@@ -330,10 +372,9 @@ export function Header() {
         </div>
       )}
 
-      {/* TOAST MESSAGE */}
+      {/* ✅ TOAST MESSAGE - Now handles warnings too */}
       {toastMessage.text && (
         <div
-          // eslint-disable-next-line react-hooks/purity
           key={`toast-${toastMessage.text}-${Date.now()}`}
           className={`order-message ${toastMessage.type}`}
         >

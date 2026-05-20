@@ -38,13 +38,16 @@ export function FeatureProduct() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAddToBasket = (productId, quantityProduct, e) => {
+  const handleAddToBasket = (productId, quantityProduct, stock, e) => {
     if (!currentUserId) {
       alert("Please log in to add items to cart!");
       return;
     }
 
-    const finalQty = quantityProduct && quantityProduct > 0 ? quantityProduct : 1;
+    const finalQty = Math.min(
+      quantityProduct && quantityProduct > 0 ? quantityProduct : 1,
+      stock
+    );
     const productItem = e.target.closest('.product-item');
     const productImg = productItem?.querySelector('img');
     const cartIcon = document.getElementById('cart-icon');
@@ -155,7 +158,12 @@ export function FeatureProduct() {
                       disabled={isOutOfStock}
                       onClick={(e) => {
                         const qtyInput = e.target.parentNode.querySelector('input');
-                        handleAddToBasket(product.product_id, parseInt(qtyInput?.value || 1), e);
+                        handleAddToBasket(
+                          product.product_id,
+                          parseInt(qtyInput?.value || 1),
+                          product.stock,
+                          e
+                        );
                       }}
                     >
                       {isOutOfStock ? "Sold Out" : "Add to Menu"}
@@ -166,6 +174,7 @@ export function FeatureProduct() {
                       type="number"
                       defaultValue="1"
                       min="1"
+                      max={product.stock}
                     />
                   </div>
                 </div>

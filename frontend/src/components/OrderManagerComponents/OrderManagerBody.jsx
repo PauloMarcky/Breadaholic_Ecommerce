@@ -32,7 +32,7 @@ const Badge = ({ status }) => (
   </span>
 );
 
-// ✅ NEW: Confirmation Modal Component
+// ✅ Confirmation Modal Component
 const ConfirmModal = ({ show, title, message, confirmText = "Confirm", cancelText = "Cancel", onConfirm, onCancel, variant = "danger", isLoading = false }) => {
   if (!show) return null;
 
@@ -65,8 +65,8 @@ const ConfirmModal = ({ show, title, message, confirmText = "Confirm", cancelTex
 function OrderManagerBody() {
   const [orders, setOrders] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [orderItems, setOrderItems] = useState([]); // ✅ NEW: Store order items
-  const [itemsLoading, setItemsLoading] = useState(false); // ✅ NEW: Loading state for items
+  const [orderItems, setOrderItems] = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newOrderToast, setNewOrderToast] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, orderId: null, orderLabel: '' });
@@ -92,7 +92,7 @@ function OrderManagerBody() {
     fetchOrders();
   }, []);
 
-  // ✅ Socket listeners (unchanged)
+  // ✅ Socket listeners
   useEffect(() => {
     if (listenersAttached.current) return;
     console.log('🔌 Admin: Setting up socket listeners...');
@@ -126,7 +126,7 @@ function OrderManagerBody() {
     };
   }, []);
 
-  // ✅ NEW: Fetch order items when an order is selected
+  // ✅ Fetch order items when an order is selected
   useEffect(() => {
     if (selected?.order_id) {
       const fetchOrderItems = async () => {
@@ -204,7 +204,17 @@ function OrderManagerBody() {
       )}
 
       {/* Delete Confirmation Modal */}
-      <ConfirmModal show={deleteConfirm.show} title="Delete Order?" message={`Are you sure you want to delete order ${deleteConfirm.orderLabel}? This will permanently remove the record (stock NOT restored).`} confirmText="Yes, Delete" cancelText="Keep Order" variant="danger" isLoading={loading} onConfirm={executeDeleteOrder} onCancel={closeDeleteConfirm} />
+      <ConfirmModal
+        show={deleteConfirm.show}
+        title="Delete Order?"
+        message={`Are you sure you want to delete order ${deleteConfirm.orderLabel}? This will permanently remove the record (stock NOT restored).`}
+        confirmText="Yes, Delete"
+        cancelText="Keep Order"
+        variant="danger"
+        isLoading={loading}
+        onConfirm={executeDeleteOrder}
+        onCancel={closeDeleteConfirm}
+      />
 
       {/* Main List */}
       <div className="om-main">
@@ -267,10 +277,22 @@ function OrderManagerBody() {
 
             <div className="om-detail__id">#{sel.order_id}</div>
             <p className="om-detail__customer">{sel.first_name} {sel.last_name}</p>
-            <p className="om-detail__address">{sel.street_name}, {sel.barangay}</p>
-            <p className="om-detail__phone">{sel.mobile_number}</p>
 
-            {/* ✅ NEW: Order Items Section */}
+            {/* ✅ UPDATED: Address with house number from ORDERS table */}
+            <p className="om-detail__address">
+              {[
+                sel.house_num,      // 🏠 House number (from ORDERS.house_num)
+                sel.street_name,    // 🛣️ Street name
+                sel.barangay,       // 📍 Barangay
+                sel.landmark        // 🗺️ Optional landmark
+              ]
+                .filter(Boolean)    // Remove null/empty values gracefully
+                .join(", ")}
+            </p>
+
+            <p className="om-detail__phone">📞 {sel.mobile_number}</p>
+
+            {/* Order Items Section */}
             <div className="om-order-items">
               <h4 className="om-items-title">📦 Items to Prepare</h4>
 

@@ -267,15 +267,29 @@ def add_user():
         if cursor.fetchone():
             return jsonify({"error": "Mobile already registered"}), 409
 
-        cursor.execute("""INSERT INTO Users (mobile_number, first_name, last_name, barangay, street_name, password, profile_picture, status)
-                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                       (mobile, fname, lname, data.get('barangay'), data.get('street_name'), data.get('password'), data.get('profile_picture'), data.get('status', 'active')))
+        cursor.execute("""
+            INSERT INTO Users (
+                mobile_number, first_name, last_name,
+                barangay, street_name, house_num,
+                password, profile_picture, status
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            mobile, fname, lname,
+            data.get('barangay'),
+            data.get('street_name'),
+            data.get('house_number'),  # ✅ NEW
+            data.get('password'),
+            data.get('profile_picture'),
+            data.get('status', 'active')
+        ))
         conn.commit()
         return jsonify({"message": "User added", "user_id": cursor.lastrowid, "first_name": fname}), 201
     except Exception as err:
         if conn:
             conn.rollback()
-        return jsonify({"error": "Mobile number must be at maximum of 11 characters"}), 500
+        print(f"❌ addUser error: {err}")  # Log for debugging
+        # Return generic but accurate message
+        return jsonify({"error": "Failed to create user. Please try again."}), 500
     finally:
         if conn:
             conn.close()
@@ -518,14 +532,20 @@ def confirm_order():
         if fee_row:
             shipping_fee = float(fee_row['shipping_fee'])  # Decimal → float
 
-        # ✅ 3. Create Order
-        cursor.execute(
-            """INSERT INTO ORDERS 
-               (user_id, barangay, street_name, landmark, order_total, shipping_fee, status) 
-               VALUES (%s, %s, %s, %s, %s, %s, 'Pending')""",
-            (uid, address.get('barangay'), address.get('street'),
-             address.get('landmark'), float(total_price), shipping_fee)
-        )
+        cursor.execute("""
+            INSERT INTO ORDERS
+            (user_id, barangay, street_name, house_num,
+             landmark, order_total, shipping_fee, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'Pending')
+        """, (
+            uid,
+            address.get('barangay'),
+            address.get('street'),
+            address.get('house_number'),  # ✅ NEW
+            address.get('landmark'),
+            float(total_price),
+            shipping_fee
+        ))
         new_order_id = cursor.lastrowid
 
         # ✅ 4. Create Order Items
@@ -689,11 +709,29 @@ def get_orders():
     try:
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
-        query = """SELECT o.order_id, o.user_id, o.barangay, o.street_name, o.landmark, o.order_total, o.shipping_fee, o.status, u.first_name, u.last_name, u.mobile_number FROM ORDERS o JOIN Users u ON o.user_id = u.user_id ORDER BY o.order_id DESC"""
+
+        query = """
+            SELECT 
+                o.order_id, o.user_id, 
+                o.barangay, o.street_name, o.house_num, o.landmark,
+                o.order_total, o.shipping_fee, o.status, 
+                u.first_name, u.last_name, u.mobile_number 
+            FROM ORDERS o 
+            JOIN Users u ON o.user_id = u.user_id 
+            ORDER BY o.order_id DESC
+        """
         cursor.execute(query)
         orders = cursor.fetchall()
+
+        # ✅ DEBUG: Log first order's house_num value
+        if orders:
+            print(
+                f"🔍 DEBUG - First order house_num: '{orders[0].get('house_num')}'")
+            print(f"🔍 DEBUG - First order raw data: {orders[0]}")
+
         return jsonify(orders), 200
     except Exception as e:
+        print(f"❌ getOrders error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -809,20 +847,42 @@ def get_user_addresses(user_id):
     try:
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""SELECT barangay, street_name, landmark, barangay_second, street_name_second, landmark_second, barangay_third, street_name_third, landmark_third FROM Users WHERE user_id = %s""", (user_id,))
+        cursor.execute("""
+    SELECT 
+        barangay, street_name, house_num, landmark,
+        barangay_second, street_name_second, house_num_second, landmark_second,
+        barangay_third, street_name_third, house_num_third, landmark_third 
+        FROM Users WHERE user_id = %s
+        """, (user_id,))
         user = cursor.fetchone()
         if not user:
             return jsonify({"error": "User not found"}), 404
+
         addresses = []
-        if user['barangay'] or user['street_name']:
-            addresses.append({"id": 1, "position": 1, "barangay": user['barangay'] or "",
-                             "street": user['street_name'] or "", "landmark": user['landmark'] or ""})
-        if user['barangay_second'] or user['street_name_second']:
-            addresses.append({"id": 2, "position": 2, "barangay": user['barangay_second'] or "",
-                             "street": user['street_name_second'] or "", "landmark": user['landmark_second'] or ""})
-        if user['barangay_third'] or user['street_name_third']:
-            addresses.append({"id": 3, "position": 3, "barangay": user['barangay_third'] or "",
-                             "street": user['street_name_third'] or "", "landmark": user['landmark_third'] or ""})
+        if user['barangay'] or user['street_name'] or user['house_num']:  # ✅ Added house_num check
+            addresses.append({
+                "id": 1, "position": 1,
+                "barangay": user['barangay'] or "",
+                "street": user['street_name'] or "",
+                "house_number": user['house_num'] or "",
+                "landmark": user['landmark'] or ""
+            })
+        if user['barangay_second'] or user['street_name_second'] or user['house_num_second']:
+            addresses.append({
+                "id": 2, "position": 2,
+                "barangay": user['barangay_second'] or "",
+                "street": user['street_name_second'] or "",
+                "house_number": user['house_num_second'] or "",
+                "landmark": user['landmark_second'] or ""
+            })
+        if user['barangay_third'] or user['street_name_third'] or user['house_num_third']:
+            addresses.append({
+                "id": 3, "position": 3,
+                "barangay": user['barangay_third'] or "",
+                "street": user['street_name_third'] or "",
+                "house_number": user['house_num_third'] or "",
+                "landmark": user['landmark_third'] or ""
+            })
         return jsonify(addresses), 200
     except Exception as err:
         return jsonify({"error": str(err)}), 500
@@ -846,28 +906,46 @@ def save_address():
         conn = db_pool.get_connection()
         cursor = conn.cursor()
         if position is None:
-            cursor.execute(
-                "SELECT barangay, street_name, barangay_second, street_name_second, barangay_third, street_name_third FROM Users WHERE user_id = %s", (user_id,))
+            cursor.execute("""
+                SELECT 
+                    barangay, street_name, house_num,
+                    barangay_second, street_name_second, house_num_second,
+                    barangay_third, street_name_third, house_num_third 
+                FROM Users WHERE user_id = %s
+            """, (user_id,))
             user_data = cursor.fetchone()
-            if not user_data:
-                return jsonify({"error": "User not found"}), 404
-            if not user_data[0] and not user_data[1]:
+
+            # Check ALL address fields (including house_num) for emptiness
+            # barangay, street, house_num
+            if not user_data[0] and not user_data[1] and not user_data[2]:
                 position = 1
-            elif not user_data[2] and not user_data[3]:
+            elif not user_data[3] and not user_data[4] and not user_data[5]:  # second
                 position = 2
-            elif not user_data[4] and not user_data[5]:
+            elif not user_data[6] and not user_data[7] and not user_data[8]:  # third
                 position = 3
             else:
                 return jsonify({"error": "Maximum 3 addresses reached"}), 400
+        # Inside the position == 1 block:
         if position == 1:
-            cursor.execute("UPDATE Users SET barangay = %s, street_name = %s, landmark = %s WHERE user_id = %s",
-                           (barangay, street, landmark, user_id))
+            cursor.execute("""
+                UPDATE Users SET 
+                    barangay = %s, street_name = %s, house_num = %s, landmark = %s 
+                WHERE user_id = %s
+            """, (barangay, street, data.get('house_number'), landmark, user_id))  # ✅ Added house_num
+
         elif position == 2:
-            cursor.execute("UPDATE Users SET barangay_second = %s, street_name_second = %s, landmark_second = %s WHERE user_id = %s",
-                           (barangay, street, landmark, user_id))
+            cursor.execute("""
+                UPDATE Users SET 
+                    barangay_second = %s, street_name_second = %s, house_num_second = %s, landmark_second = %s 
+                WHERE user_id = %s
+            """, (barangay, street, data.get('house_number'), landmark, user_id))  # ✅ Added house_num_second
+
         elif position == 3:
-            cursor.execute("UPDATE Users SET barangay_third = %s, street_name_third = %s, landmark_third = %s WHERE user_id = %s",
-                           (barangay, street, landmark, user_id))
+            cursor.execute("""
+                UPDATE Users SET 
+                    barangay_third = %s, street_name_third = %s, house_num_third = %s, landmark_third = %s 
+                WHERE user_id = %s
+            """, (barangay, street, data.get('house_number'), landmark, user_id))  # ✅ Added house_num_third
         else:
             return jsonify({"error": "Invalid position"}), 400
         conn.commit()
@@ -895,11 +973,24 @@ def delete_address():
         conn = db_pool.get_connection()
         cursor = conn.cursor()
         if position == 2:
-            cursor.execute(
-                "UPDATE Users SET barangay_second = NULL, street_name_second = NULL, landmark_second = NULL WHERE user_id = %s", (user_id,))
+            cursor.execute("""
+                UPDATE Users SET 
+                    barangay_second = NULL, 
+                    street_name_second = NULL, 
+                    house_num_second = NULL,    -- ✅ NEW
+                    landmark_second = NULL 
+                WHERE user_id = %s
+            """, (user_id,))
+
         elif position == 3:
-            cursor.execute(
-                "UPDATE Users SET barangay_third = NULL, street_name_third = NULL, landmark_third = NULL WHERE user_id = %s", (user_id,))
+            cursor.execute("""
+                UPDATE Users SET 
+                    barangay_third = NULL, 
+                    street_name_third = NULL, 
+                    house_num_third = NULL,     -- ✅ NEW
+                    landmark_third = NULL 
+                WHERE user_id = %s
+            """, (user_id,))
         else:
             return jsonify({"error": "Invalid position"}), 400
         conn.commit()

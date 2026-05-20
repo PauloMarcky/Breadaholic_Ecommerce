@@ -6,11 +6,15 @@ import Select from "react-select";
 export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
   const [addresses, setAddresses] = useState([]);
   const [editingPosition, setEditingPosition] = useState(null);
+
+  // ✅ UPDATED: Add houseNumber to formData state
   const [formData, setFormData] = useState({
     barangay: "",
     street: "",
+    houseNumber: "",  // ✅ NEW: House number field
     landmark: ""
   });
+
   const [isLoading, setIsLoading] = useState(false);
 
   const [deleteConfirm, setDeleteConfirm] = useState({
@@ -57,6 +61,7 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
   };
 
   const handleSaveAddress = async () => {
+    // ✅ UPDATED: Validate houseNumber is required (or make it optional by removing this check)
     if (!formData.barangay || !formData.street) {
       onShowMessage?.("Please fill in Barangay and Street name!", "error");
       return;
@@ -69,12 +74,14 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
         position: editingPosition,
         barangay: formData.barangay,
         street: formData.street,
+        house_number: formData.houseNumber,  // ✅ NEW: Send house_number to backend
         landmark: formData.landmark
       });
 
       onShowMessage?.("Address saved successfully!", "success");
       setEditingPosition(null);
-      setFormData({ barangay: "", street: "", landmark: "" });
+      // ✅ Reset form including houseNumber
+      setFormData({ barangay: "", street: "", houseNumber: "", landmark: "" });
       await fetchAddresses();
       onAddressUpdate?.();
     } catch (err) {
@@ -116,9 +123,11 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
 
   const handleEditAddress = (address) => {
     setEditingPosition(address.id);
+    // ✅ UPDATED: Include houseNumber when populating form
     setFormData({
       barangay: address.barangay,
       street: address.street,
+      houseNumber: address.house_number || "",  // ✅ NEW: Populate house number
       landmark: address.landmark
     });
   };
@@ -143,7 +152,15 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
                       : "Address 3"}
                 </h5>
                 <p><strong>Barangay:</strong> {address.barangay}</p>
-                <p><strong>Street:</strong> {address.street}</p>
+
+                {/* ✅ UPDATED: Display house number + street together */}
+                <p>
+                  <strong>Address:</strong>{' '}
+                  {[address.house_number, address.street]  // ✅ House number first
+                    .filter(Boolean)
+                    .join(", ")}
+                </p>
+
                 {address.landmark && <p><strong>Landmark:</strong> {address.landmark}</p>}
               </div>
               <div className="address-actions">
@@ -195,18 +212,33 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
                 })
               }}
             />
-            <input
-              type="text"
-              name="street"
-              placeholder="Street Name"
-              value={formData.street}
-              onChange={handleInputChange}
-            />
+
+            {/* ✅ NEW: House Number + Street on same row */}
+            <div className="address-row">
+              <input
+                type="text"
+                name="houseNumber"  // ✅ Matches formData key
+                placeholder="House Number"
+                value={formData.houseNumber}
+                onChange={handleInputChange}
+                className="field-house"
+              />
+              <input
+                type="text"
+                name="street"
+                placeholder="Street Name"
+                value={formData.street}
+                onChange={handleInputChange}
+                className="field-street"
+              />
+            </div>
+
             <textarea
               name="landmark"
               placeholder="Landmark (optional)"
               value={formData.landmark}
               onChange={handleInputChange}
+              className="field-landmark"
             />
 
             <div className="form-buttons">
@@ -218,7 +250,8 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
                   className="cancel-btn"
                   onClick={() => {
                     setEditingPosition(null);
-                    setFormData({ barangay: "", street: "", landmark: "" });
+                    // ✅ Reset including houseNumber
+                    setFormData({ barangay: "", street: "", houseNumber: "", landmark: "" });
                   }}
                   disabled={isLoading}
                 >

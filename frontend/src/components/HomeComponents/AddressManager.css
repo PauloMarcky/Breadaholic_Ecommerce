@@ -409,6 +409,10 @@
   cursor: not-allowed;
 }
 
+.field-house {
+  margin-bottom: 10px;
+}
+
 /* Animation keyframes (reuse if already defined) */
 @keyframes modalFadeIn {
   from {
