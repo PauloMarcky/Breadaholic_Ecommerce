@@ -4,8 +4,15 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import './ProductManagerBody.css';
 
-const API_BASE = 'http://localhost:5000';
-const SOCKET_BASE = 'http://localhost:5000';
+const API_BASE = 'http://10.137.201.159:5000';
+const SOCKET_BASE = 'http://10.137.201.159:5000';
+
+const getImageUrl = (relativePath) => {
+  if (!relativePath) return 'https://via.placeholder.com/200';
+  if (relativePath.startsWith('http')) return relativePath;
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${API_BASE}${path}`;
+};
 
 // ✅ Socket connection (outside component)
 const socket = io(SOCKET_BASE, {
@@ -41,7 +48,7 @@ const ProductModal = ({ product, onSave, onClose, showToast }) => {
         stock: product.stock || '',
         category: product.category || 'Bread',
         ingredients: product.ingredients || '',
-        image: product.image || '',
+        image: product.image || '',  // ← Keep as relative path from backend
         imageFile: null
       };
     }
@@ -95,7 +102,12 @@ const ProductModal = ({ product, onSave, onClose, showToast }) => {
         <div className="pm-modal-body">
           <div className="pm-modal-preview clickable" onClick={handlePreviewClick} title="Click to change image">
             {form.image ? (
-              <img src={form.image} alt="preview" className="pm-preview-image" />
+              <img
+                src={getImageUrl(form.image)}  // ✅ Resolve relative path to full URL
+                alt="preview"
+                className="pm-preview-image"
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
+              />
             ) : (
               <span className="pm-preview-placeholder"><small>Click to add</small></span>
             )}

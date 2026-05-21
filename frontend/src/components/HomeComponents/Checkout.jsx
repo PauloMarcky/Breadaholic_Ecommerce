@@ -2,7 +2,14 @@ import './Checkout.css'
 import axios from 'axios';
 import { useState, useEffect } from 'react'
 
-const API_BASE = 'http://localhost:5000'; // ✅ Centralized API base
+const API_BASE = 'http://10.137.201.159:5000'; // ✅ Centralized API base
+
+const getImageUrl = (relativePath) => {
+  if (!relativePath) return 'https://via.placeholder.com/200';
+  if (relativePath.startsWith('http')) return relativePath;
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${API_BASE}${path}`;
+};
 
 // ✅ FIXED: Added selectedItems to props
 export function Checkout({ onCancel, itemsToBuy, selectedItems, setSelectedItems, setToastMessage }) {
@@ -179,7 +186,7 @@ export function Checkout({ onCancel, itemsToBuy, selectedItems, setSelectedItems
           {itemsToBuy && itemsToBuy.length > 0 ? (
             itemsToBuy.map((item) => (
               <div className="order-display" key={item.ordItem_id}>
-                <img src={item.image || "../src/assets/cart-item.jpg"} alt={item.product_name} />
+                <img src={getImageUrl(item.image)} alt={item.product_name} />
                 <div className="order-info">
                   <h5>{item.product_name}</h5>
                   <h5>₱{item.price}</h5>

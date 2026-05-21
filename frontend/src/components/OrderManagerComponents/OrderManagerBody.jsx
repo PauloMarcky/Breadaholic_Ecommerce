@@ -81,7 +81,7 @@ function OrderManagerBody() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/getOrders');
+        const res = await axios.get('http://10.137.201.159:5000/getOrders');
         setOrders(res.data);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
@@ -101,7 +101,7 @@ function OrderManagerBody() {
     const handleNewOrder = (data) => {
       console.log('🔔 New order received:', data);
       setNewOrderToast({ id: data.order_id, customer: data.customer || 'New Customer', total: data.total, time: new Date().toLocaleTimeString() });
-      axios.get('http://localhost:5000/getOrders').then(res => setOrders(res.data)).catch(err => console.error("Order sync error:", err));
+      axios.get('http://10.137.201.159:5000/getOrders').then(res => setOrders(res.data)).catch(err => console.error("Order sync error:", err));
       setTimeout(() => setNewOrderToast(null), 5000);
     };
 
@@ -132,7 +132,7 @@ function OrderManagerBody() {
       const fetchOrderItems = async () => {
         setItemsLoading(true);
         try {
-          const res = await axios.get(`http://localhost:5000/getOrderItems/${selected.order_id}`);
+          const res = await axios.get(`http://10.137.201.159:5000/getOrderItems/${selected.order_id}`);
           setOrderItems(res.data);
         } catch (err) {
           console.error('Failed to fetch order items:', err);
@@ -149,7 +149,7 @@ function OrderManagerBody() {
 
   const updateStatus = async (orderId, status) => {
     try {
-      await axios.put(`http://localhost:5000/updateOrderStatus/${orderId}`, { status });
+      await axios.put(`http://10.137.201.159:5000/updateOrderStatus/${orderId}`, { status });
       setOrders(prev => prev.map(o => o.order_id === orderId ? { ...o, status } : o));
       if (selected?.order_id === orderId) {
         setSelected(prev => prev ? { ...prev, status } : null);
@@ -168,7 +168,7 @@ function OrderManagerBody() {
     if (!orderId) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/deleteOrder/${orderId}`);
+      await axios.delete(`http://10.137.201.159:5000/deleteOrder/${orderId}`);
       setOrders(prev => prev.filter(o => o.order_id !== orderId));
       if (selected?.order_id === orderId) setSelected(null);
       showToast('Order record deleted (stock unchanged)', 'success');
@@ -241,7 +241,7 @@ function OrderManagerBody() {
                       <tr key={order.order_id}>
                         <td className="om-table__id">#{order.order_id}</td>
                         <td>{order.first_name} {order.last_name}</td>
-                        <td>₱{Number(order.order_total) + Number(order.shipping_fee)}</td>
+                        <td>₱{Number(order.order_total)}</td>
                         <td><Badge status={order.status} /></td>
                         <td>
                           <div className="om-table__actions">
@@ -322,9 +322,8 @@ function OrderManagerBody() {
 
             {/* Totals */}
             <div className="om-totals">
-              <div className="om-totals__row"><span>Order Total</span><span>₱{sel.order_total}</span></div>
               <div className="om-totals__row"><span>Shipping</span><span>₱{sel.shipping_fee}</span></div>
-              <div className="om-totals__grand"><span>Total</span><span>₱{Number(sel.order_total) + Number(sel.shipping_fee)}</span></div>
+              <div className="om-totals__grand"><span>Total</span><span>₱{Number(sel.order_total)}</span></div>
             </div>
 
             {/* Actions */}

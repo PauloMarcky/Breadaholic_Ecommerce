@@ -6,8 +6,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client'; // ✅ NEW: Socket.IO client
 import "./react-select.css"
 
-const API_BASE = 'http://localhost:5000';
-const SOCKET_BASE = 'http://localhost:5000';
+const API_BASE = 'http://10.137.201.159:5000';
+const SOCKET_BASE = 'http://10.137.201.159:5000';
 const socket = io(SOCKET_BASE, { transports: ['websocket', 'polling'] }); // ✅ Initialize socket
 
 const barangayOptions = [

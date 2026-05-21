@@ -27,7 +27,7 @@ export function AllOrders({ onCancel }) {
   // ✅ Fetch user orders
   const fetchUserOrders = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/getOrders`);
+      const res = await axios.get(`http://10.137.201.159:5000/getOrders`);
       const userOrders = res.data.filter(
         order => String(order.user_id) === String(currentUserId)
       );
@@ -93,7 +93,7 @@ export function AllOrders({ onCancel }) {
     if (!orderId) return;
 
     try {
-      const response = await axios.post("http://localhost:5000/cancel_order", {
+      const response = await axios.post("http://10.137.201.159:5000/cancel_order", {
         order_id: orderId,
         user_id: currentUserId
       });

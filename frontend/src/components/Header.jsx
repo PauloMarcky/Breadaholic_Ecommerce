@@ -29,6 +29,15 @@ export function Header() {
   const openSidebar = () => setIsProfileOpen(!isProfileOpen);
   const handleConfirmation = () => setIsConfirmed(!isConfirmed);
 
+  const API_BASE = 'http://10.137.201.159:5000'; // Update if your IP changes
+
+  const getImageUrl = (relativePath) => {
+    if (!relativePath) return 'https://via.placeholder.com/200';
+    if (relativePath.startsWith('http')) return relativePath;
+    const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+    return `${API_BASE}${path}`;
+  };
+
   // ✅ NEW: Validate checkout and show toast warning (no modal)
   const handleCheckoutClick = () => {
     // Check if cart is empty
@@ -54,7 +63,7 @@ export function Header() {
   // ✅ FIX: Extracted as a standalone function so AddressManager can trigger it
   const fetchUserData = async () => {
     try {
-      const userRes = await axios.get(`http://localhost:5000/getUser/${currentUserId}`);
+      const userRes = await axios.get(`http://10.137.201.159:5000/getUser/${currentUserId}`);
       // ✅ Normalize field names for frontend consistency
       setUserData({
         ...userRes.data,
@@ -65,23 +74,29 @@ export function Header() {
       console.error("Error refreshing user data:", err);
     }
   };
-
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("user_id", currentUserId);
+
     try {
-      const res = await axios.post("http://localhost:5000/upload_pfp", formData, {
+      const res = await axios.post(`${API_BASE}/upload_pfp`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      // ✅ Resolve URL with API_BASE + cache-bust
+      const resolvedUrl = getImageUrl(res.data.profile_picture);
       setUserData((prev) => ({
         ...prev,
-        profile_picture: `${res.data.profile_picture}?t=${Date.now()}`
+        profile_picture: `${resolvedUrl}?t=${Date.now()}`
       }));
+
     } catch (err) {
       console.error("Upload failed:", err);
+      setToastMessage({ text: "Failed to upload profile picture", type: "error" });
     }
   };
 
@@ -117,7 +132,7 @@ export function Header() {
   const fetchCart = async () => {
     try {
       if (!currentUserId) return;
-      const response = await axios.get(`http://localhost:5000/view_cart/${currentUserId}`);
+      const response = await axios.get(`http://10.137.201.159:5000/view_cart/${currentUserId}`);
       setCartItems(response.data);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -149,7 +164,7 @@ export function Header() {
   const handleQuantityChange = async (productId, type) => {
     const endpoint = type === "add" ? "/add_to_cart" : "/reduce_quantity";
     try {
-      await axios.post(`http://localhost:5000${endpoint}`, {
+      await axios.post(`http://10.137.201.159:5000${endpoint}`, {
         user_id: currentUserId,
         product_id: productId,
         quantity: 1
@@ -161,7 +176,7 @@ export function Header() {
 
   const handleRemoveItem = async (ordItemId) => {
     try {
-      await axios.post("http://localhost:5000/remove_from_cart", {
+      await axios.post("http://10.137.201.159:5000/remove_from_cart", {
         user_id: currentUserId,
         ordItem_id: ordItemId
       });
@@ -219,7 +234,7 @@ export function Header() {
                         onChange={() => toggleItemSelection(item.ordItem_id)}
                       />
                       <div className="item-display">
-                        <img src={item.image} alt={item.product_name} />
+                        <img src={getImageUrl(item.image)} alt={item.product_name} />
                         <div className="item-infos">
                           <h5>{item.product_name}</h5>
                           <p>Stocks: {item.stock}</p>
@@ -276,14 +291,12 @@ export function Header() {
                   <img src="./public/hide-button.png" alt="" />
                 </button>
               </div>
-
               <div className="profile-image-container">
                 <img
                   className="profile-img"
-                  src={userData?.profile_picture
-                    ? `${userData.profile_picture.split('?')[0]}?t=${userData.profile_picture.split('?')[1] || 'init'}`
-                    : "/default-pfp.png"}
-                  alt=""
+                  src={userData?.profile_picture || "/default-pfp.png"}
+                  alt={`${userData?.first_name || 'User'} profile`}
+                  onError={(e) => { e.target.src = "/default-pfp.png"; }}
                 />
                 <input
                   ref={fileInputRef}

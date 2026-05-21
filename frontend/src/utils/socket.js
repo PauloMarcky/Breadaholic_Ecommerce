@@ -1,7 +1,7 @@
 // utils/socket.js
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = 'http://10.137.201.159:5000';
 
 export const socket = io(SOCKET_URL, {
   autoConnect: false,

@@ -15,7 +15,7 @@ export function Review() {
     // Define the fetcher inside to ensure it's treated as a side effect
     const loadInitialData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/get_feedbacks");
+        const response = await fetch("http://10.137.201.159:5000/get_feedbacks");
         const data = await response.json();
         if (response.ok) {
           setReviewsList(data); // This update is now safely 'async'
@@ -61,7 +61,7 @@ export function Review() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/add_feedback", {
+      const response = await fetch("http://10.137.201.159:5000/add_feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

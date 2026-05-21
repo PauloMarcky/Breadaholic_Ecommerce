@@ -12,7 +12,7 @@ export function ContactBody() {
     setStatus('sending');
 
     try {
-      await axios.post('http://localhost:5000/send_contact_email', formData);
+      await axios.post('http://10.137.201.159:5000/send_contact_email', formData);
       setStatus('success');
       setFormData({ name: '', email: '', message: '' });
       setTimeout(() => setStatus(null), 3000);

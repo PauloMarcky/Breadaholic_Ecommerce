@@ -78,6 +78,66 @@ def serialize_row(row):
 # ✅ NEW: Helper for lists of rows (e.g., getProducts)
 
 
+# ✅ Helper: Generate dynamic date buckets based on range
+def get_dynamic_date_ranges(start_date, end_date):
+    """
+    Returns list of {start, end, label} buckets.
+    Bucketing logic:
+    - ≤ 31 days → daily buckets
+    - 32-90 days → weekly buckets  
+    - > 90 days → monthly buckets
+    """
+    start = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    delta_days = (end - start).days
+
+    buckets = []
+
+    if delta_days <= 31:
+        # 📅 Daily buckets
+        current = start
+        while current <= end:
+            buckets.append({
+                'start': current,
+                'end': current,
+                'label': current.strftime('%b %d')  # e.g., "Jan 15"
+            })
+            current += timedelta(days=1)
+
+    elif delta_days <= 90:
+        # 📆 Weekly buckets (Monday-Sunday)
+        current = start
+        while current <= end:
+            week_end = min(current + timedelta(days=6), end)
+            buckets.append({
+                'start': current,
+                'end': week_end,
+                'label': f"{current.strftime('%b %d')}-{week_end.strftime('%b %d')}"
+            })
+            current = week_end + timedelta(days=1)
+
+    else:
+        # 🗓️ Monthly buckets
+        current = start.replace(day=1)
+        while current <= end:
+            # Last day of month
+            if current.month == 12:
+                next_month = current.replace(
+                    year=current.year+1, month=1, day=1)
+            else:
+                next_month = current.replace(month=current.month+1, day=1)
+            month_end = min(next_month - timedelta(days=1), end)
+
+            buckets.append({
+                'start': current,
+                'end': month_end,
+                'label': current.strftime('%b %Y')  # e.g., "Jan 2026"
+            })
+            current = next_month
+
+    return buckets
+
+
 def serialize_rows(rows):
     """Convert list of MySQL rows to JSON-serializable format"""
     return [serialize_row(row) for row in rows] if rows else []
@@ -683,19 +743,28 @@ def upload_pfp():
         file = request.files.get("file")
         if not file or not user_id:
             return jsonify({"error": "Missing file or user_id"}), 400
+
         ext = os.path.splitext(secure_filename(file.filename))[1]
         filename = f"user_{user_id}{ext}"
-        # ✅ FIXED: Save to PROFILE_UPLOAD_FOLDER
         save_path = os.path.join(PROFILE_UPLOAD_FOLDER, filename)
         file.save(save_path)
-        # ✅ FIXED: Dynamic host URL for cross-device access
-        db_path = f"{request.host_url.rstrip('/')}/pfp's/{filename}"
+
+        # ✅ FIXED: Store RELATIVE path only (no host/IP)
+        # Old: db_path = f"{request.host_url.rstrip('/')}/pfp's/{filename}"
+        # New:
+        db_path = f"/pfp's/{filename}"  # ← Relative path works on any device
+
         conn = db_pool.get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE Users SET profile_picture = %s WHERE user_id = %s", (db_path, user_id))
+            "UPDATE Users SET profile_picture = %s WHERE user_id = %s",
+            (db_path, user_id)
+        )
         conn.commit()
+
+        # ← Return relative path
         return jsonify({"profile_picture": db_path}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -1191,41 +1260,44 @@ def upload_product_image():
         if not product_id or not file:
             return jsonify({"error": "Missing data"}), 400
 
+        # Secure filename and generate stored filename
         ext = os.path.splitext(secure_filename(file.filename))[1]
         filename = f"product_{product_id}{ext}"
         save_path = os.path.join(PRODUCT_UPLOAD_FOLDER, filename)
         file.save(save_path)
 
-        image_url = f"{request.host_url.rstrip('/')}/product_images/{filename}"
+        # ✅ FIXED: Store RELATIVE path only (no host/IP)
+        # Old: image_url = f"{request.host_url.rstrip('/')}/product_images/{filename}"
+        # New:
+        # ← Relative path works on any device
+        image_path = f"/product_images/{filename}"
 
         conn = db_pool.get_connection()
-        cursor = conn.cursor(dictionary=True)  # ✅ Ensure dictionary mode
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute(
             "UPDATE Products SET image=%s WHERE product_id=%s",
-            (image_url, product_id)
+            (image_path, product_id)  # ← Store relative path in DB
         )
         conn.commit()
 
-        # ✅ FIXED: Fetch full product and serialize before returning
+        # Fetch updated product for real-time emit
         cursor.execute(
             "SELECT product_id, product_name, price, stock, category, ingredients, image, featured FROM Products WHERE product_id = %s",
             (product_id,)
         )
         updated_product = cursor.fetchone()
 
-        # ✅ Emit real-time update with serialized data
+        # Emit real-time update with serialized data
         socketio.emit('products_updated', {
             'action': 'updated',
             'product_id': product_id,
-            # ← This fixes the error!
             'product_data': serialize_row(updated_product)
         })
 
-        # ✅ Return serialized response
+        # ✅ Return relative path + serialized product
         return jsonify({
-            "image": image_url,
-            # ← Optional: if frontend needs it
+            "image": image_path,  # ← Frontend will prepend window.location.origin
             "product": serialize_row(updated_product)
         }), 200
 
@@ -1446,11 +1518,25 @@ def get_sales_summary():
     conn = None
     try:
         period = request.args.get('period', 'monthly')
-        date_ranges = get_date_ranges(period)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        # ✅ Determine which date ranges to use
+        if start_date and end_date:
+            # Validate dates
+            try:
+                datetime.strptime(start_date, '%Y-%m-%d')
+                datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+            date_ranges = get_dynamic_date_ranges(start_date, end_date)
+        else:
+            # Fallback to original period-based logic
+            date_ranges = get_date_ranges(period)
+
         conn = db_pool.get_connection()
         cursor = conn.cursor(dictionary=True)
-
-        timestamp_col = 'date_ordered'  # ← CHANGE to 'created_at' if needed
+        timestamp_col = 'date_ordered'
         results = []
 
         for dr in date_ranges:
@@ -1468,13 +1554,13 @@ def get_sales_summary():
             row = cursor.fetchone() or {
                 'order_count': 0, 'gross_revenue': 0, 'items_sold': 0}
             results.append({
-                'period': dr['label'],
+                'period': dr['label'],  # ✅ This becomes the X-axis label
                 'order_count': int(row['order_count']),
                 'gross_revenue': float(row['gross_revenue']),
                 'items_sold': int(row['items_sold'])
             })
 
-        return jsonify({'period': period, 'data': results}), 200
+        return jsonify({'period': period, 'data': results, 'date_range': {'start': start_date, 'end': end_date} if start_date else None}), 200
 
     except Exception as e:
         print(f"❌ summary ERROR: {e}")

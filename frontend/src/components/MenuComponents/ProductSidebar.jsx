@@ -1,8 +1,18 @@
 import '../MenuComponents/ProductSidebar.css';
 import { useState, useEffect } from 'react';
 
-export function ProductSidebar({ isOpen, product, onAddToCart }) {
+export function ProductSidebar({ isOpen, product, onAddToCart, getImageUrl }) {
   const [qty, setQty] = useState(1);
+
+  const resolveImage = (path) => {
+    if (!path) return 'https://via.placeholder.com/200';
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    // ⚠️ You'll need API_BASE here - see Step 2
+    return `http://10.137.201.159:5000${cleanPath}`;
+  };
+
+  const finalGetImageUrl = getImageUrl || resolveImage;
 
   useEffect(() => {
     const shouldLock = isOpen;
@@ -17,7 +27,11 @@ export function ProductSidebar({ isOpen, product, onAddToCart }) {
       {product && (
         <>
           <div className="product-profile">
-            <img src={product.image} alt={product.product_name} />
+            <img
+              src={finalGetImageUrl(product?.image)}  // ✅ Use the resolved function
+              alt={product?.product_name || 'Product'}
+              onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
+            />
           </div>
 
           <h3>{product.product_name}</h3>

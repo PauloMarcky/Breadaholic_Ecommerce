@@ -4,7 +4,14 @@ import axios from 'axios';
 import { useEffect, useState } from 'react'
 
 // ✅ CONFIG: Use your PC's WiFi IP for API calls
-const API_BASE = 'http://localhost:5000'; // ← Change if your IP is different
+const API_BASE = 'http://10.137.201.159:5000'; // ← Change if your IP is different
+
+const getImageUrl = (relativePath) => {
+  if (!relativePath) return 'https://via.placeholder.com/200';
+  if (relativePath.startsWith('http')) return relativePath;
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${API_BASE}${path}`;
+};
 
 export function FeatureProduct() {
   const [featuredProductData, setFeaturedProductData] = useState([]);
@@ -24,7 +31,7 @@ export function FeatureProduct() {
   };
 
   useEffect(() => {
-    // ✅ Use API_BASE instead of hardcoded localhost
+    // ✅ Use API_BASE instead of hardcoded 10.137.201.159
     axios.get(`${API_BASE}/getFeatured`)
       .then(response => {
         console.log("✅ Featured products loaded:", response.data);
@@ -149,7 +156,12 @@ export function FeatureProduct() {
                   {isOutOfStock && <div className='out-stock-message'>OUT OF STOCK</div>}
 
                   <div className="product-placeholder">
-                    <img src={product.image} alt={product.product_name} />
+                    {/* ✅ FIXED: Use getImageUrl + onError fallback */}
+                    <img
+                      src={getImageUrl(product.image)}
+                      alt={product.product_name}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
+                    />
                   </div>
 
                   <div className="product-footer">

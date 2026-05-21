@@ -4,7 +4,14 @@ import { socket, connectSocket } from '../../utils/socket.js';
 import { ProductSidebar } from '../MenuComponents/ProductSidebar';
 import './Products.css';
 
-const API_BASE = 'http://localhost:5000'; // Update if your IP changes
+const API_BASE = 'http://10.137.201.159:5000'; // Update if your IP changes
+
+const getImageUrl = (relativePath) => {
+  if (!relativePath) return 'https://via.placeholder.com/200';
+  if (relativePath.startsWith('http')) return relativePath;
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${API_BASE}${path}`; // ✅ Use API_BASE, NOT window.location.origin
+};
 
 export function Products({ filters }) {
   const [AllProducts, setAllProducts] = useState([]);
@@ -125,7 +132,13 @@ export function Products({ filters }) {
         <img className={`flying-item ${isAnimating ? 'fly' : ''}`} src={flyingItem.src}
           style={{ '--start-x': `${flyingItem.sx}px`, '--start-y': `${flyingItem.sy}px`, '--end-x': `${flyingItem.ex}px`, '--end-y': `${flyingItem.ey}px` }} alt="flying" />
       )}
-      <ProductSidebar isOpen={OpenDetails} product={selectedProduct} cartItems={CartItems} onAddToCart={handleAddToBasket} />
+      <ProductSidebar
+        isOpen={OpenDetails}
+        product={selectedProduct}
+        cartItems={CartItems}
+        onAddToCart={handleAddToBasket}
+        getImageUrl={getImageUrl}  // 👈 ADD THIS LINE
+      />
 
       <div className="menu-right-side">
         {displayProducts.map(product => {
@@ -134,7 +147,13 @@ export function Products({ filters }) {
             <div key={product.product_id} className={`product-wrapper ${isOutOfStock ? 'is-out-of-stock' : ''}`}
               style={isOutOfStock ? { opacity: 0.6, pointerEvents: 'none' } : {}}>
               {isOutOfStock && <div className='out-stock-message'>OUT OF STOCK</div>}
-              <img onClick={() => handleProductClick(product)} className="product-image" src={product.image || 'https://via.placeholder.com/200'} alt={product.product_name} />
+              <img
+                onClick={() => handleProductClick(product)}
+                className="product-image"
+                src={getImageUrl(product.image)}
+                alt={product.product_name}
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/200'; }}
+              />
               <div className="product-details">
                 <p>{product.product_name}</p>
                 <p className="price-wrapper">₱{product.price}</p>

@@ -47,7 +47,7 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
 
   const fetchAddresses = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/get_user_addresses/${userId}`);
+      const res = await axios.get(`http://10.137.201.159:5000/get_user_addresses/${userId}`);
       setAddresses(res.data);
     } catch (err) {
       console.error("Error fetching addresses:", err);
@@ -69,7 +69,7 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
 
     setIsLoading(true);
     try {
-      await axios.post("http://localhost:5000/save_address", {
+      await axios.post("http://10.137.201.159:5000/save_address", {
         user_id: userId,
         position: editingPosition,
         barangay: formData.barangay,
@@ -101,7 +101,7 @@ export function AddressManager({ userId, onShowMessage, onAddressUpdate }) {
 
     setIsLoading(true);
     try {
-      await axios.post("http://localhost:5000/delete_address", {
+      await axios.post("http://10.137.201.159:5000/delete_address", {
         user_id: userId,
         position: deleteConfirm.position
       });

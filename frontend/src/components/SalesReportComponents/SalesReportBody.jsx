@@ -4,8 +4,8 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import './SalesReportBody.css';
 
-const API_BASE = 'http://localhost:5000';
-const SOCKET_BASE = 'http://localhost:5000';
+const API_BASE = 'http://10.137.201.159:5000';
+const SOCKET_BASE = 'http://10.137.201.159:5000';
 
 // ✅ Initialize socket once (outside component)
 const socket = io(SOCKET_BASE, { transports: ['websocket', 'polling'] });
@@ -59,7 +59,6 @@ const getNiceMax = (value, type = 'revenue') => {
   if (value <= 0) return type === 'revenue' ? 1000 : 10;
 
   if (type === 'revenue') {
-    // For revenue: round to nearest 1k, 2k, 5k, 10k, etc. + 10% padding
     const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
     const normalized = value / magnitude;
     let niceMultiplier;
@@ -68,9 +67,8 @@ const getNiceMax = (value, type = 'revenue') => {
     else if (normalized <= 5) niceMultiplier = 5;
     else niceMultiplier = 10;
     const niceValue = Math.ceil(value / (magnitude * niceMultiplier)) * magnitude * niceMultiplier;
-    return Math.ceil(niceValue * 1.1); // 10% breathing room
+    return Math.ceil(niceValue * 1.1);
   } else {
-    // For units sold: round to nearest 5, 10, 20, 50, etc. + 15% padding
     if (value <= 10) {
       return Math.ceil((Math.ceil(value / 5) * 5) * 1.15);
     } else if (value <= 50) {
@@ -83,8 +81,38 @@ const getNiceMax = (value, type = 'revenue') => {
   }
 };
 
+// ✅ Helper: Format date to YYYY-MM-DD for API
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// ✅ Helper: Get default date range based on period
+const getDefaultDateRange = (period) => {
+  const end = new Date();
+  const start = new Date();
+
+  if (period === 'weekly') {
+    start.setDate(end.getDate() - 7);
+  } else {
+    start.setMonth(end.getMonth() - 1);
+  }
+
+  return {
+    startDate: formatDate(start),
+    endDate: formatDate(end)
+  };
+};
+
 export default function SalesReportBody() {
   const [period, setPeriod] = useState('monthly');
+  const [filterMode, setFilterMode] = useState('period'); // 'period' | 'date-range'
+  const [dateRange, setDateRange] = useState(getDefaultDateRange('monthly'));
+
   const [revenueData, setRevenueData] = useState([]);
   const [productSalesData, setProductSalesData] = useState([]);
   const [stats, setStats] = useState({
@@ -94,15 +122,25 @@ export default function SalesReportBody() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ✅ Build API query params based on filter mode
+  const buildQueryParams = () => {
+    if (filterMode === 'date-range' && dateRange.startDate && dateRange.endDate) {
+      return `start_date=${dateRange.startDate}&end_date=${dateRange.endDate}`;
+    }
+    return `period=${period}`;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      const queryParams = buildQueryParams();
+
       const [summaryRes, productRes, statsRes] = await Promise.all([
-        axios.get(`${API_BASE}/sales_report/summary?period=${period}`),
-        axios.get(`${API_BASE}/sales_report/products?period=${period}`),
-        axios.get(`${API_BASE}/sales_report/stats`)
+        axios.get(`${API_BASE}/sales_report/summary?${queryParams}`),
+        axios.get(`${API_BASE}/sales_report/products?${queryParams}`),
+        axios.get(`${API_BASE}/sales_report/stats`) // Stats might stay period-based or add date params if supported
       ]);
 
       // ✅ Transform summary → LineChart (Gross Revenue)
@@ -148,10 +186,39 @@ export default function SalesReportBody() {
     fetchData();
   };
 
-  useEffect(() => {
+  // ✅ Handle period change (resets to period mode)
+  const handlePeriodChange = (e) => {
+    setPeriod(e.target.value);
+    setFilterMode('period');
+    setDateRange(getDefaultDateRange(e.target.value));
+  };
+
+  // ✅ Handle date range change
+  const handleDateChange = (field, value) => {
+    setDateRange(prev => ({ ...prev, [field]: value }));
+  };
+
+  // ✅ Apply date range filter
+  const applyDateFilter = () => {
+    if (dateRange.startDate && dateRange.endDate) {
+      setFilterMode('date-range');
+      fetchData();
+    }
+  };
+
+  // ✅ Reset to period filter
+  const resetToPeriod = () => {
+    setFilterMode('period');
     fetchData();
+  };
+
+  useEffect(() => {
+    if (filterMode === 'period') {
+      fetchData();
+    }
   }, [period]);
 
+  // ✅ Socket listeners for real-time updates
   useEffect(() => {
     const handleSalesUpdate = (data) => {
       console.log('🔄 Sales data updated, refreshing...', data);
@@ -165,7 +232,7 @@ export default function SalesReportBody() {
       socket.off('sales_data_updated', handleSalesUpdate);
       socket.off('order_status_updated', handleSalesUpdate);
     };
-  }, []);
+  }, [filterMode, period, dateRange]);
 
   const formatPeso = (amount) => `₱${Number(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 
@@ -220,6 +287,138 @@ export default function SalesReportBody() {
         {loading ? 'Refreshing...' : 'Refresh'}
       </button>
 
+      {/* ✅ Filter Controls */}
+      <div style={{
+        display: 'flex',
+        gap: 12,
+        marginBottom: 24,
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        background: 'var(--card)',
+        padding: '12px 16px',
+        borderRadius: 8,
+        border: '1px solid var(--border)'
+      }}>
+        {/* Filter Mode Toggle */}
+        <div style={{ display: 'flex', gap: 4, background: 'var(--cream)', padding: 4, borderRadius: 6 }}>
+          <button
+            onClick={() => setFilterMode('period')}
+            style={{
+              padding: '6px 12px',
+              border: 'none',
+              borderRadius: 4,
+              background: filterMode === 'period' ? 'var(--amber)' : 'transparent',
+              color: filterMode === 'period' ? 'white' : 'var(--brown)',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontWeight: 500
+            }}
+          >
+            Period
+          </button>
+          <button
+            onClick={() => setFilterMode('date-range')}
+            style={{
+              padding: '6px 12px',
+              border: 'none',
+              borderRadius: 4,
+              background: filterMode === 'date-range' ? 'var(--amber)' : 'transparent',
+              color: filterMode === 'date-range' ? 'white' : 'var(--brown)',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontWeight: 500
+            }}
+          >
+            Custom Range
+          </button>
+        </div>
+
+        {/* Period Selector */}
+        {filterMode === 'period' && (
+          <select
+            value={period}
+            onChange={handlePeriodChange}
+            className="sr-select"
+            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'white' }}
+          >
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        )}
+
+        {/* Date Range Inputs */}
+        {filterMode === 'date-range' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ fontSize: 12, color: 'var(--brown)' }}>From:</label>
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={(e) => handleDateChange('startDate', e.target.value)}
+                max={dateRange.endDate || formatDate(new Date())}
+                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13 }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ fontSize: 12, color: 'var(--brown)' }}>To:</label>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={(e) => handleDateChange('endDate', e.target.value)}
+                min={dateRange.startDate}
+                max={formatDate(new Date())}
+                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13 }}
+              />
+            </div>
+            <button
+              onClick={applyDateFilter}
+              disabled={loading || !dateRange.startDate || !dateRange.endDate}
+              style={{
+                padding: '6px 16px',
+                background: 'var(--amber)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                cursor: loading || !dateRange.startDate || !dateRange.endDate ? 'not-allowed' : 'pointer',
+                fontSize: 12,
+                fontWeight: 500
+              }}
+            >
+              Apply
+            </button>
+            <button
+              onClick={resetToPeriod}
+              style={{
+                padding: '6px 12px',
+                background: 'transparent',
+                color: 'var(--muted)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 12
+              }}
+            >
+              Reset
+            </button>
+          </>
+        )}
+
+        {/* Active Filter Badge */}
+        <span style={{
+          marginLeft: 'auto',
+          fontSize: 11,
+          color: 'var(--muted)',
+          background: 'var(--cream)',
+          padding: '4px 10px',
+          borderRadius: 12
+        }}>
+          {filterMode === 'period'
+            ? `Showing: ${period === 'weekly' ? 'Last 7 days' : 'Last 30 days'}`
+            : `Showing: ${dateRange.startDate} to ${dateRange.endDate}`
+          }
+        </span>
+      </div>
+
       {/* ✅ KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 24 }}>
         <StatCard
@@ -245,10 +444,16 @@ export default function SalesReportBody() {
       <div className="sr-chart-card">
         <div className="sr-chart-header">
           <h3>Gross Revenue</h3>
-          <select value={period} onChange={(e) => setPeriod(e.target.value)} className="sr-select">
-            <option value="monthly">Monthly</option>
-            <option value="weekly">Weekly</option>
-          </select>
+          {filterMode === 'period' ? (
+            <select value={period} onChange={handlePeriodChange} className="sr-select">
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          ) : (
+            <span className="sr-select" style={{ cursor: 'default', background: 'var(--cream)' }}>
+              {dateRange.startDate} → {dateRange.endDate}
+            </span>
+          )}
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={revenueData} margin={{ top: 8, right: 8, bottom: 10, left: 0 }}>
@@ -258,9 +463,11 @@ export default function SalesReportBody() {
               tick={{ fontSize: 10, fill: "#7A5030" }}
               axisLine={false}
               tickLine={false}
-              interval={0}
+              interval={revenueData.length > 14 ? 'preserveStartEnd' : 0} // Avoid crowding
+              angle={revenueData.length > 14 ? -10 : 0}
+              textAnchor={revenueData.length > 14 ? "end" : "middle"}
+              height={revenueData.length > 14 ? 60 : 40}
             />
-            {/* ✅ DYNAMIC Y-AXIS using getNiceMax helper */}
             <YAxis
               tick={{ fontSize: 11, fill: "#7A5030" }}
               axisLine={false}
@@ -290,7 +497,7 @@ export default function SalesReportBody() {
         </ResponsiveContainer>
         {revenueData.length === 0 && (
           <p className="sr-empty" style={{ textAlign: 'center', color: 'var(--muted)', padding: 20 }}>
-            No revenue data for this period
+            No sales data found for {filterMode === 'date-range' ? 'selected dates' : 'this period'}
           </p>
         )}
       </div>
@@ -300,7 +507,10 @@ export default function SalesReportBody() {
         <div className="sr-chart-header">
           <h3>Top Products</h3>
           <span className="sr-select" style={{ cursor: 'default', background: 'var(--cream)' }}>
-            {period === 'weekly' ? 'This Week' : 'This Month'}
+            {filterMode === 'period'
+              ? (period === 'weekly' ? 'This Week' : 'This Month')
+              : `${dateRange.startDate} → ${dateRange.endDate}`
+            }
           </span>
         </div>
         <ResponsiveContainer width="100%" height={300}>
@@ -316,7 +526,6 @@ export default function SalesReportBody() {
               textAnchor="end"
               height={60}
             />
-            {/* ✅ DYNAMIC WHOLE-NUMBER Y-AXIS using getNiceMax helper */}
             <YAxis
               tick={{ fontSize: 11, fill: "#7A5030" }}
               axisLine={false}
@@ -338,7 +547,7 @@ export default function SalesReportBody() {
         </ResponsiveContainer>
         {productSalesData.length === 0 && (
           <p className="sr-empty" style={{ textAlign: 'center', color: 'var(--muted)', padding: 20 }}>
-            No product sales data for this period
+            No product sales data for selected period
           </p>
         )}
       </div>

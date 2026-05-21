@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './UserManagerBody.css';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://10.137.201.159:5000';
 
 const PageHeader = ({ title }) => <div className="um-page-header"><h1>{title}</h1></div>;
 
